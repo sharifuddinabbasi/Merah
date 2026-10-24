@@ -24,8 +24,8 @@
                     <i class="fa-solid fa-wallet text-2xl text-yellow-300"></i>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold tracking-tight">Mehran Account (View Only)</h1>
-                    <p class="text-xs text-blue-200">Financial Ledger & Transactions Record</p>
+                    <h1 class="text-2xl font-bold tracking-tight">Mehran Account</h1>
+                    <p class="text-xs text-blue-200">Financial Ledger & Transactions Record (View Only)</p>
                 </div>
             </div>
         </div>
@@ -115,7 +115,11 @@
               .onSnapshot((snapshot) => {
                   entries = [];
                   snapshot.forEach((doc) => {
-                      entries.push({ id: doc.id, ...doc.data() });
+                      const data = doc.data();
+                      // Sirf wohi entries shamil karein jo index.html se mukammal save hui hain (jin mein pkr field mojood hai aur "New Description" wali test rows nahi hain)
+                      if (data.pkr !== undefined && data.desc !== "New Description") {
+                          entries.push({ id: doc.id, ...data });
+                      }
                   });
                   document.getElementById('loadingState').classList.add('hidden');
                   renderTable();
@@ -154,8 +158,8 @@
                     <td class="py-3 px-4 text-gray-600">${item.date || ''}</td>
                     <td class="py-3 px-4 font-medium text-gray-800">${escapeHtml(item.desc || '')}</td>
                     <td class="py-3 px-4 text-gray-700"><span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-medium">${escapeHtml(item.status || '-')}</span></td>
-                    <td class="py-3 px-4 text-right text-gray-700">${(item.dhrm || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td class="py-3 px-4 text-right font-semibold text-blue-600">${(item.total || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="py-3 px-4 text-right text-gray-700">${Number(item.dhrm || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="py-3 px-4 text-right font-semibold text-blue-600">${Number(item.total || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                 `;
                 tableBody.appendChild(row);
             });
@@ -169,7 +173,7 @@
                 '"': '&quot;',
                 "'": '&#039;'
             };
-            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+            return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
         loadEntries();
