@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mehran Account</title>
+    <title>Mehran Account - View Only</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
@@ -24,7 +24,7 @@
                     <i class="fa-solid fa-wallet text-2xl text-yellow-300"></i>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-bold tracking-tight">Mehran Account</h1>
+                    <h1 class="text-2xl font-bold tracking-tight">Mehran Account (View Only)</h1>
                     <p class="text-xs text-blue-200">Financial Ledger & Transactions Record</p>
                 </div>
             </div>
@@ -34,7 +34,7 @@
     <!-- Main Content Area -->
     <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow">
 
-        <!-- Controls / Search Bar & Add Row Button -->
+        <!-- Search Bar Only -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="relative w-full md:w-96">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -43,9 +43,6 @@
                 <input type="text" id="searchInput" oninput="renderTable()" placeholder="Search description, status or date..." 
                     class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
             </div>
-            <button onclick="addNewRow()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2 text-sm">
-                <i class="fa-solid fa-plus"></i> New Row
-            </button>
         </div>
 
         <!-- Table Section -->
@@ -80,7 +77,6 @@
                     <i class="fa-solid fa-folder-open"></i>
                 </div>
                 <p class="text-gray-500 font-medium">No records found</p>
-                <p class="text-gray-400 text-xs mt-1">Click on "New Row" to create a new entry.</p>
             </div>
         </div>
     </main>
@@ -130,23 +126,6 @@
               });
         }
 
-        async function addNewRow() {
-            const today = new Date().toISOString().split('T')[0];
-            try {
-                await db.collection("mehran_entries").add({
-                    date: today,
-                    desc: "New Description",
-                    status: "Pending",
-                    dhrm: 0,
-                    total: 0,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } catch (error) {
-                console.error("Error adding row: ", error);
-                alert("Failed to add new row.");
-            }
-        }
-
         function renderTable() {
             const tableBody = document.getElementById('tableBody');
             const emptyState = document.getElementById('emptyState');
@@ -172,61 +151,13 @@
                 row.className = "hover:bg-gray-50/80 transition";
                 row.innerHTML = `
                     <td class="py-3 px-4 font-medium text-gray-600">${index + 1}</td>
-                    <td class="py-3 px-4 text-gray-600 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'date', '${item.date || ''}', 'date')">${item.date || ''}</td>
-                    <td class="py-3 px-4 font-medium text-gray-800 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'desc', '${escapeHtml(item.desc || '')}', 'text')">${escapeHtml(item.desc || '')}</td>
-                    <td class="py-3 px-4 text-gray-700 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'status', '${escapeHtml(item.status || '')}', 'text')"><span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-medium">${escapeHtml(item.status || '-')}</span></td>
-                    <td class="py-3 px-4 text-right text-gray-700 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'dhrm', '${item.dhrm || 0}', 'number')">${(item.dhrm || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="py-3 px-4 text-gray-600">${item.date || ''}</td>
+                    <td class="py-3 px-4 font-medium text-gray-800">${escapeHtml(item.desc || '')}</td>
+                    <td class="py-3 px-4 text-gray-700"><span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-medium">${escapeHtml(item.status || '-')}</span></td>
+                    <td class="py-3 px-4 text-right text-gray-700">${(item.dhrm || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td class="py-3 px-4 text-right font-semibold text-blue-600">${(item.total || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                 `;
                 tableBody.appendChild(row);
-            });
-        }
-
-        // Excel-like double click inline editing
-        function makeEditable(cell, id, field, currentValue, type) {
-            if (cell.querySelector('input')) return;
-
-            const originalContent = cell.innerHTML;
-            cell.innerHTML = `<input type="${type}" value="${currentValue}" class="w-full px-2 py-1 border border-blue-500 rounded text-sm bg-white focus:outline-none" autofocus>`;
-            
-            const input = cell.querySelector('input');
-            input.focus();
-
-            async function saveChanges() {
-                let newValue = input.value;
-                if (type === 'number') {
-                    newValue = parseFloat(newValue) || 0;
-                }
-
-                const item = entries.find(e => e.id === id);
-                if (!item) return;
-
-                item[field] = newValue;
-                if (field === 'dhrm') {
-                    item.total = newValue; // Total equals DHRM
-                }
-
-                try {
-                    const updateData = { [field]: newValue };
-                    if (field === 'dhrm') {
-                        updateData.total = newValue;
-                    }
-                    await db.collection("mehran_entries").doc(id).update(updateData);
-                    renderTable();
-                } catch (error) {
-                    console.error("Error updating: ", error);
-                    alert("Failed to update entry.");
-                    cell.innerHTML = originalContent;
-                }
-            }
-
-            input.addEventListener('blur', saveChanges);
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    input.blur();
-                } else if (e.key === 'Escape') {
-                    cell.innerHTML = originalContent;
-                }
             });
         }
 
