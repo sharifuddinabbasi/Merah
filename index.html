@@ -45,7 +45,7 @@
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                     <i class="fa-solid fa-search"></i>
                 </span>
-                <input type="text" id="searchInput" oninput="renderTable()" placeholder="Search description or date..." 
+                <input type="text" id="searchInput" oninput="renderTable()" placeholder="Search description, status or date..." 
                     class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
             </div>
         </div>
@@ -59,6 +59,7 @@
                             <th class="py-3.5 px-4">Sr. No.</th>
                             <th class="py-3.5 px-4">Date</th>
                             <th class="py-3.5 px-4">Description</th>
+                            <th class="py-3.5 px-4">Status</th>
                             <th class="py-3.5 px-4 text-right">PKR</th>
                             <th class="py-3.5 px-4 text-right">DHRM</th>
                             <th class="py-3.5 px-4 text-right">Total</th>
@@ -95,7 +96,7 @@
         </div>
     </footer>
 
-    <!-- Add/Edit Modal -->
+    <!-- Add/Edit Modal (For manual full entry if needed) -->
     <div id="entryModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
             <div class="bg-blue-700 px-6 py-4 text-white flex justify-between items-center">
@@ -116,10 +117,15 @@
                     <input type="text" id="entryDesc" placeholder="Enter description..." required
                         class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Status</label>
+                    <input type="text" id="entryStatus" placeholder="Enter status (e.g. Paid, Pending)..." required
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">PKR Amount</label>
-                        <input type="number" step="any" id="entryPkr" placeholder="0.00" oninput="calculateTotalPreview()"
+                        <input type="number" step="any" id="entryPkr" placeholder="0.00"
                             class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
@@ -129,7 +135,7 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Total (Calculated)</label>
+                    <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Total (DHRM Only)</label>
                     <input type="text" id="entryTotal" readonly placeholder="0.00"
                         class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700">
                 </div>
@@ -195,6 +201,7 @@
                 if (item) {
                     document.getElementById('entryDate').value = item.date;
                     document.getElementById('entryDesc').value = item.desc;
+                    document.getElementById('entryStatus').value = item.status || "";
                     document.getElementById('entryPkr').value = item.pkr;
                     document.getElementById('entryDhrm').value = item.dhrm;
                     document.getElementById('entryTotal').value = item.total;
@@ -213,10 +220,8 @@
         }
 
         function calculateTotalPreview() {
-            const pkr = parseFloat(document.getElementById('entryPkr').value) || 0;
             const dhrm = parseFloat(document.getElementById('entryDhrm').value) || 0;
-            const total = pkr + dhrm; 
-            document.getElementById('entryTotal').value = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('entryTotal').value = dhrm.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
         async function saveEntry(e) {
@@ -224,9 +229,10 @@
             const editId = document.getElementById('editId').value;
             const date = document.getElementById('entryDate').value;
             const desc = document.getElementById('entryDesc').value;
+            const status = document.getElementById('entryStatus').value;
             const pkr = parseFloat(document.getElementById('entryPkr').value) || 0;
             const dhrm = parseFloat(document.getElementById('entryDhrm').value) || 0;
-            const total = pkr + dhrm;
+            const total = dhrm;
 
             const saveBtn = document.getElementById('saveBtn');
             saveBtn.disabled = true;
@@ -237,6 +243,7 @@
                     await db.collection("mehran_entries").add({
                         date,
                         desc,
+                        status,
                         pkr,
                         dhrm,
                         total,
@@ -246,6 +253,7 @@
                     await db.collection("mehran_entries").doc(editId).update({
                         date,
                         desc,
+                        status,
                         pkr,
                         dhrm,
                         total
@@ -270,6 +278,7 @@
 
             const filteredEntries = entries.filter(item => 
                 item.desc.toLowerCase().includes(searchTerm) || 
+                (item.status && item.status.toLowerCase().includes(searchTerm)) || 
                 item.date.includes(searchTerm)
             );
 
@@ -285,10 +294,11 @@
                 row.className = "hover:bg-gray-50/80 transition";
                 row.innerHTML = `
                     <td class="py-3 px-4 font-medium text-gray-600">${index + 1}</td>
-                    <td class="py-3 px-4 text-gray-600">${item.date}</td>
-                    <td class="py-3 px-4 font-medium text-gray-800">${escapeHtml(item.desc)}</td>
-                    <td class="py-3 px-4 text-right text-gray-700">${item.pkr.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td class="py-3 px-4 text-right text-gray-700">${item.dhrm.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="py-3 px-4 text-gray-600 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'date', '${item.date}', 'date')">${item.date}</td>
+                    <td class="py-3 px-4 font-medium text-gray-800 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'desc', '${escapeHtml(item.desc)}', 'text')">${escapeHtml(item.desc)}</td>
+                    <td class="py-3 px-4 text-gray-700 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'status', '${escapeHtml(item.status || '')}', 'text')"><span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-medium">${escapeHtml(item.status || '-')}</span></td>
+                    <td class="py-3 px-4 text-right text-gray-700 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'pkr', '${item.pkr}', 'number')">${item.pkr.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="py-3 px-4 text-right text-gray-700 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'dhrm', '${item.dhrm}', 'number')">${item.dhrm.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td class="py-3 px-4 text-right font-semibold text-blue-600">${item.total.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td class="py-3 px-4 text-center">
                         <div class="flex items-center justify-center gap-2">
@@ -305,8 +315,55 @@
             });
         }
 
+        // Excel-like double click inline editing
+        function makeEditable(cell, id, field, currentValue, type) {
+            if (cell.querySelector('input')) return; // Already editing
+
+            const originalContent = cell.innerHTML;
+            cell.innerHTML = `<input type="${type}" value="${currentValue}" class="w-full px-2 py-1 border border-blue-500 rounded text-sm bg-white focus:outline-none" autofocus>`;
+            
+            const input = cell.querySelector('input');
+            input.focus();
+
+            async function saveChanges() {
+                let newValue = input.value;
+                if (type === 'number') {
+                    newValue = parseFloat(newValue) || 0;
+                }
+
+                const item = entries.find(e => e.id === id);
+                if (!item) return;
+
+                item[field] = newValue;
+                if (field === 'dhrm' || field === 'pkr') {
+                    item.total = item.dhrm; // Total is DHRM only
+                }
+
+                try {
+                    await db.collection("mehran_entries").doc(id).update({
+                        [field]: newValue,
+                        total: item.total
+                    });
+                    renderTable();
+                } catch (error) {
+                    console.error("Error updating: ", error);
+                    alert("Failed to update entry.");
+                    cell.innerHTML = originalContent;
+                }
+            }
+
+            input.addEventListener('blur', saveChanges);
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    cell.innerHTML = originalContent;
+                }
+            });
+        }
+
         async function deleteEntry(id) {
-            if (confirm("Are you sure you want to delete this entry?")) {
+            if (confirm("Aap kya is entry ko delete karna chahte hain?")) {
                 try {
                     await db.collection("mehran_entries").doc(id).delete();
                 } catch (error) {
