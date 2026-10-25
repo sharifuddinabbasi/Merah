@@ -57,9 +57,9 @@
                     <thead>
                         <tr class="bg-gray-100 text-[11px] uppercase text-gray-700 font-bold tracking-wider">
                             <th class="py-2.5 px-1 border border-gray-300 text-center" style="width: 5%;">Sr. No.</th>
-                            <th class="py-2.5 px-1 border border-gray-300 text-center" style="width: 8%;">Date</th>
+                            <th class="py-2.5 px-1 border border-gray-300 text-center" style="width: 7%;">Date</th>
                             <th class="py-2.5 px-1 border border-gray-300" style="width: 25%;">Description</th>
-                            <th class="py-2.5 px-1 border border-gray-300" style="width: 22%;">Status</th>
+                            <th class="py-2.5 px-1 border border-gray-300" style="width: 23%;">Status</th>
                             <th class="py-2.5 px-1 border border-gray-300 text-right" style="width: 12%;">PKR</th>
                             <th class="py-2.5 px-1 border border-gray-300 text-right" style="width: 12%;">DHRM</th>
                             <th class="py-2.5 px-1 border border-gray-300 text-right" style="width: 12%;">Total</th>
@@ -105,10 +105,10 @@
         </div>
     </footer>
 
-    <!-- Add/ চেয়ে Edit Modal -->
+    <!-- Add/Edit Modal (Movable & Dynamic Header Color) -->
     <div id="entryModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
-            <div class="bg-blue-700 px-6 py-4 text-white flex justify-between items-center">
+        <div id="modalBox" class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all relative">
+            <div id="modalHeader" class="px-6 py-4 text-white flex justify-between items-center cursor-move select-none">
                 <h3 id="modalTitle" class="font-semibold text-lg">Add New Entry</h3>
                 <button onclick="closeModal()" class="text-white/80 hover:text-white text-lg">
                     <i class="fa-solid fa-xmark"></i>
@@ -145,7 +145,7 @@
                 </div>
                 <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
                     <button type="button" onclick="closeModal()" class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition">Cancel</button>
-                    <button type="submit" id="saveBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow transition">Save Entry</button>
+                    <button type="submit" id="saveBtn" class="px-4 py-2 text-white rounded-lg text-sm font-semibold shadow transition">Save Entry</button>
                 </div>
             </form>
         </div>
@@ -154,11 +154,21 @@
     <!-- Custom Delete Confirmation Modal -->
     <div id="deleteModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all p-6 text-center">
-            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-xl">
+            <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <h3 class="font-bold text-lg text-gray-900 mb-1">Are you sure?</h3>
-            <p class="text-xs text-gray-500 mb-6">Do you really want to delete this entry? This process cannot be undone.</p>
+            <p class="text-xs text-gray-500 mb-3">Do you really want to delete this entry?</p>
+            
+            <div class="space-y-2 mb-4">
+                <div class="bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-left">
+                    <div id="deleteTargetDesc" class="text-xs font-semibold text-gray-800 truncate"></div>
+                </div>
+                <div class="bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-left">
+                    <div id="deleteTargetDhrm" class="text-xs font-semibold text-blue-600"></div>
+                </div>
+            </div>
+
             <div class="flex justify-center gap-3">
                 <button type="button" onclick="closeDeleteModal()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition">Cancel</button>
                 <button type="button" id="confirmDeleteBtn" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold shadow transition">Delete</button>
@@ -187,9 +197,54 @@
 
         let entries = [];
         let activeSaveHandler = null;
-        let deleteTargetId = null; // Store ID for custom delete modal
+        let deleteTargetId = null;
 
         document.getElementById('entryDate').valueAsDate = new Date();
+
+        // Draggable Modal Logic
+        const modalBox = document.getElementById('modalBox');
+        const modalHeader = document.getElementById('modalHeader');
+
+        let isDragging = false;
+        let startX, startY;
+        let translateX = 0, translateY = 0;
+
+        modalHeader.addEventListener('mousedown', startDrag);
+        modalHeader.addEventListener('touchstart', startDrag, {passive: true});
+
+        function startDrag(e) {
+            isDragging = true;
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            startX = clientX - translateX;
+            startY = clientY - translateY;
+
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchmove', onDrag, {passive: false});
+            document.addEventListener('touchend', stopDrag);
+        }
+
+        function onDrag(e) {
+            if (!isDragging) return;
+            if (e.type === 'touchmove') {
+                e.cancelable && e.preventDefault();
+            }
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            translateX = clientX - startX;
+            translateY = clientY - startY;
+
+            modalBox.style.transform = `translate(${translateX}px, ${translateY}px)`;
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', stopDrag);
+            document.removeEventListener('touchmove', onDrag);
+            document.removeEventListener('touchend', stopDrag);
+        }
 
         function formatDateTwoLines(dateStr) {
             if (!dateStr) return '';
@@ -227,11 +282,22 @@
             const modal = document.getElementById('entryModal');
             const form = document.getElementById('entryForm');
             const modalTitle = document.getElementById('modalTitle');
+            const modalHeader = document.getElementById('modalHeader');
+            const saveBtn = document.getElementById('saveBtn');
             
+            // Reset position when opening
+            translateX = 0;
+            translateY = 0;
+            modalBox.style.transform = 'translate(0px, 0px)';
+
             modal.classList.remove('hidden');
             
             if (id !== null) {
                 modalTitle.innerText = "Edit Entry";
+                // Edit mode -> Red Header & Red Button
+                modalHeader.className = "px-6 py-4 text-white flex justify-between items-center cursor-move select-none bg-red-600";
+                saveBtn.className = "px-4 py-2 text-white rounded-lg text-sm font-semibold shadow transition bg-red-600 hover:bg-red-700";
+                
                 document.getElementById('editId').value = id;
                 const item = entries.find(e => e.id === id);
                 if (item) {
@@ -243,6 +309,10 @@
                 }
             } else {
                 modalTitle.innerText = "Add New Entry";
+                // Add mode -> Green Header & Green Button
+                modalHeader.className = "px-6 py-4 text-white flex justify-between items-center cursor-move select-none bg-green-600";
+                saveBtn.className = "px-4 py-2 text-white rounded-lg text-sm font-semibold shadow transition bg-green-600 hover:bg-green-700";
+                
                 form.reset();
                 document.getElementById('editId').value = "";
                 document.getElementById('entryDate').valueAsDate = new Date();
@@ -341,7 +411,7 @@
                 const row = document.createElement('tr');
                 row.className = "hover:bg-gray-50 transition";
                 row.innerHTML = `
-                    <td class="py-2 px-1 border border-gray-300 font-medium text-gray-600 text-center">${index + 1}</td>
+                    <td class="py-2 px-1 border border-gray-300 font-medium text-gray-600 text-center cursor-pointer hover:bg-blue-50 transition" onclick="openModal('${item.id}')" title="Click to Edit">${index + 1}</td>
                     <td class="py-2 px-1 border border-gray-300 text-gray-700 text-center cursor-pointer hover:bg-blue-50 transition whitespace-nowrap" ondblclick="makeEditable(this, '${item.id}', 'date', '${item.date}', 'date')">${formatDateTwoLines(item.date)}</td>
                     <td class="py-2 px-1 border border-gray-300 font-medium text-gray-800 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'desc', '${escapeHtml(item.desc)}', 'text')">${escapeHtml(item.desc)}</td>
                     <td class="py-2 px-1 border border-gray-300 text-gray-700 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'status', '${escapeHtml(item.status || '')}', 'text')"><span class="bg-blue-50 text-blue-700 px-1 py-0.5 rounded-full text-[11px] font-medium">${escapeHtml(item.status || '-')}</span></td>
@@ -350,7 +420,7 @@
                     <td class="py-2 px-1 border border-gray-300 text-right font-semibold text-blue-600">${Number(item.calculatedTotal || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="py-2 px-1 border border-gray-300 text-center">
                         <div class="flex items-center justify-center">
-                            <button onclick="promptDelete('${item.id}')" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition text-sm" title="Delete">
+                            <button onclick="promptDelete('${item.id}', '${escapeHtml(item.desc).replace(/'/g, "\\'")}', '${dhrmVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}')" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition text-sm" title="Delete">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
@@ -364,9 +434,10 @@
             document.getElementById('grandTotalFinal').innerText = sumDhrm.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
-        // Custom Delete Popup Trigger
-        function promptDelete(id) {
+        function promptDelete(id, desc, dhrm) {
             deleteTargetId = id;
+            document.getElementById('deleteTargetDesc').innerText = desc || '-';
+            document.getElementById('deleteTargetDhrm').innerText = dhrm || '0.00';
             document.getElementById('deleteModal').classList.remove('hidden');
         }
 
@@ -402,8 +473,8 @@
 
             const originalContent = cell.innerHTML;
             const inputClass = type === 'date' 
-                ? "w-full px-0.5 py-0.5 border border-blue-600 rounded text-[11px] bg-white focus:outline-none" 
-                : "w-full px-1 py-0.5 border border-blue-600 rounded text-xs bg-white focus:outline-none shadow-inner";
+                ? "w-full px-0.5 py-0.5 border border-red-600 rounded text-[11px] bg-white focus:outline-none" 
+                : "w-full px-1 py-0.5 border border-red-600 rounded text-xs bg-white focus:outline-none shadow-inner";
 
             cell.innerHTML = `<input type="${type}" step="any" value="${currentValue}" class="${inputClass}">`;
             
