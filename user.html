@@ -32,36 +32,43 @@
     </header>
 
     <!-- Main Content Area -->
-    <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow">
+    <main class="max-w-7xl mx-auto px-2 sm:px-4 py-6 w-full flex-grow">
 
         <!-- Search Bar Only -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="relative w-full md:w-96">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                     <i class="fa-solid fa-search"></i>
                 </span>
                 <input type="text" id="searchInput" oninput="renderTable()" placeholder="Search description, status or date..." 
-                    class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                    class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
             </div>
         </div>
 
         <!-- Table Section -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-300 overflow-hidden max-w-[580px] mx-auto">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-[580px] text-left border-collapse table-fixed">
                     <thead>
-                        <tr class="bg-gray-50 border-b border-gray-100 text-xs uppercase text-gray-500 font-semibold tracking-wider">
-                            <th class="py-3.5 px-4">Sr. No.</th>
-                            <th class="py-3.5 px-4">Date</th>
-                            <th class="py-3.5 px-4">Description</th>
-                            <th class="py-3.5 px-4">Status</th>
-                            <th class="py-3.5 px-4 text-right">DHRM</th>
-                            <th class="py-3.5 px-4 text-right">Total</th>
+                        <tr class="bg-gray-100 text-[11px] uppercase text-gray-700 font-bold tracking-wider">
+                            <th class="py-2.5 px-1 border border-gray-300 text-center" style="width: 6%;">Sr. No.</th>
+                            <th class="py-2.5 px-1 border border-gray-300 text-center" style="width: 8%;">Date</th>
+                            <th class="py-2.5 px-1 border border-gray-300" style="width: 28%;">Description</th>
+                            <th class="py-2.5 px-1 border border-gray-300" style="width: 28%;">Status</th>
+                            <th class="py-2.5 px-1 border border-gray-300 text-right" style="width: 15%;">DHRM</th>
+                            <th class="py-2.5 px-1 border border-gray-300 text-right" style="width: 15%;">Total</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-gray-100 text-sm">
+                    <tbody id="tableBody" class="text-xs">
                         <!-- Dynamic rows will be inserted here -->
                     </tbody>
+                    <tfoot id="tableFooter" class="bg-gray-100 font-bold text-xs hidden">
+                        <tr>
+                            <td colspan="4" class="py-2.5 px-1 border border-gray-300 text-right text-gray-800 uppercase">Grand Total</td>
+                            <td id="grandTotalDhrm" class="py-2.5 px-1 border border-gray-300 text-right text-gray-900">0.00</td>
+                            <td id="grandTotalFinal" class="py-2.5 px-1 border border-gray-300 text-right text-blue-700">0.00</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
             <!-- Loading State -->
@@ -82,7 +89,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-100 py-4 mt-8">
+    <footer class="bg-white border-t border-gray-200 py-4 mt-8">
         <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500">
             Mehran Account &copy; 2026. All rights reserved.
         </div>
@@ -109,6 +116,18 @@
 
         let entries = [];
 
+        function formatDateTwoLines(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                const year = parts[0];
+                const month = parts[1];
+                const day = parts[2];
+                return `<div class="leading-tight"><div>${day}-${month}</div><div class="text-[10px] text-gray-500">${year}</div></div>`;
+            }
+            return dateStr;
+        }
+
         function loadEntries() {
             db.collection("mehran_entries")
               .orderBy("date", "asc")
@@ -116,7 +135,6 @@
                   entries = [];
                   snapshot.forEach((doc) => {
                       const data = doc.data();
-                      // Sirf wohi entries shamil karein jo index.html se mukammal save hui hain (jin mein pkr field mojood hai aur "New Description" wali test rows nahi hain)
                       if (data.pkr !== undefined && data.desc !== "New Description") {
                           entries.push({ id: doc.id, ...data });
                       }
@@ -132,37 +150,56 @@
 
         function renderTable() {
             const tableBody = document.getElementById('tableBody');
+            const tableFooter = document.getElementById('tableFooter');
             const emptyState = document.getElementById('emptyState');
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
             tableBody.innerHTML = "";
 
-            const filteredEntries = entries.filter(item => 
-                (item.desc && item.desc.toLowerCase().includes(searchTerm)) || 
-                (item.status && item.status.toLowerCase().includes(searchTerm)) || 
-                (item.date && item.date.includes(searchTerm))
-            );
+            let runningTotal = 0;
+            const entriesWithRunningTotal = entries.map(item => {
+                const dhrmVal = parseFloat(item.dhrm) || 0;
+                runningTotal += dhrmVal;
+                return { ...item, calculatedTotal: runningTotal };
+            });
+
+            const filteredEntries = entriesWithRunningTotal.filter(item => {
+                return (item.desc && item.desc.toLowerCase().includes(searchTerm)) || 
+                       (item.status && item.status.toLowerCase().includes(searchTerm)) || 
+                       (item.date && item.date.includes(searchTerm));
+            });
 
             if (filteredEntries.length === 0) {
                 emptyState.classList.remove('hidden');
+                tableFooter.classList.add('hidden');
                 return;
             } else {
                 emptyState.classList.add('hidden');
+                tableFooter.classList.remove('hidden');
             }
 
+            let sumDhrm = 0;
+
             filteredEntries.forEach((item, index) => {
+                const dhrmVal = parseFloat(item.dhrm) || 0;
+                sumDhrm += dhrmVal;
+
                 const row = document.createElement('tr');
-                row.className = "hover:bg-gray-50/80 transition";
+                row.className = "hover:bg-gray-50 transition";
                 row.innerHTML = `
-                    <td class="py-3 px-4 font-medium text-gray-600">${index + 1}</td>
-                    <td class="py-3 px-4 text-gray-600">${item.date || ''}</td>
-                    <td class="py-3 px-4 font-medium text-gray-800">${escapeHtml(item.desc || '')}</td>
-                    <td class="py-3 px-4 text-gray-700"><span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-medium">${escapeHtml(item.status || '-')}</span></td>
-                    <td class="py-3 px-4 text-right text-gray-700">${Number(item.dhrm || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td class="py-3 px-4 text-right font-semibold text-blue-600">${Number(item.total || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="py-2 px-1 border border-gray-300 font-medium text-gray-600 text-center">${index + 1}</td>
+                    <td class="py-2 px-1 border border-gray-300 text-gray-700 text-center whitespace-nowrap">${formatDateTwoLines(item.date)}</td>
+                    <td class="py-2 px-1 border border-gray-300 font-medium text-gray-800">${escapeHtml(item.desc || '')}</td>
+                    <td class="py-2 px-1 border border-gray-300 text-gray-700"><span class="bg-blue-50 text-blue-700 px-1 py-0.5 rounded-full text-[11px] font-medium">${escapeHtml(item.status || '-')}</span></td>
+                    <td class="py-2 px-1 border border-gray-300 text-right text-gray-700">${dhrmVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                    <td class="py-2 px-1 border border-gray-300 text-right font-semibold text-blue-600">${Number(item.calculatedTotal || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 `;
                 tableBody.appendChild(row);
             });
+
+            // Update Grand Total Row
+            document.getElementById('grandTotalDhrm').innerText = sumDhrm.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('grandTotalFinal').innerText = sumDhrm.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
         function escapeHtml(text) {
@@ -173,7 +210,7 @@
                 '"': '&quot;',
                 "'": '&#039;'
             };
-            return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+            return String(text || '').replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
         loadEntries();
