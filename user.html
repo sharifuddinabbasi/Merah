@@ -128,9 +128,16 @@
             return dateStr;
         }
 
+        function getTimeValue(createdAt) {
+            if (!createdAt) return 0;
+            if (typeof createdAt === 'number') return createdAt;
+            if (typeof createdAt.toMillis === 'function') return createdAt.toMillis();
+            if (createdAt.seconds) return createdAt.seconds * 1000;
+            return 0;
+        }
+
         function loadEntries() {
             db.collection("mehran_entries")
-              .orderBy("date", "asc")
               .onSnapshot((snapshot) => {
                   entries = [];
                   snapshot.forEach((doc) => {
@@ -139,6 +146,21 @@
                           entries.push({ id: doc.id, ...data });
                       }
                   });
+
+                  // Sort by Date first, then by exact entry creation time (createdAt)
+                  entries.sort((a, b) => {
+                      const dateA = a.date || '';
+                      const dateB = b.date || '';
+                      if (dateA !== dateB) {
+                          return dateA.localeCompare(dateB);
+                      }
+                      const timeA = getTimeValue(a.createdAt);
+                      const timeB = getTimeValue(b.createdAt);
+                      const finalTimeA = timeA === 0 ? Number.MAX_SAFE_INTEGER : timeA;
+                      const finalTimeB = timeB === 0 ? Number.MAX_SAFE_INTEGER : timeB;
+                      return finalTimeA - finalTimeB;
+                  });
+
                   document.getElementById('loadingState').classList.add('hidden');
                   renderTable();
               }, (error) => {
@@ -197,7 +219,6 @@
                 tableBody.appendChild(row);
             });
 
-            // Update Grand Total Row
             document.getElementById('grandTotalDhrm').innerText = sumDhrm.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('grandTotalFinal').innerText = sumDhrm.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
