@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mehran Account - View Only</title>
     
-    <!-- PWA & App Icon Setup for user.html -->
-    <link rel="manifest" href="manifest.json?v=2">
+    <!-- Alag manifest link user.html ke liye -->
+    <link rel="manifest" href="user-manifest.json?v=2">
     <meta name="theme-color" content="#1d4ed8">
     <link rel="icon" type="image/png" href="icon.png?v=2">
     <link rel="apple-touch-icon" href="icon.png?v=2">
@@ -263,6 +263,7 @@
         }
 
         function escapeHtml(text) {
+            if (!text) return '';
             const map = {
                 '&': '&amp;',
                 '<': '&lt;',
@@ -270,7 +271,7 @@
                 '"': '&quot;',
                 "'": '&#039;'
             };
-            return String(text || '').replace(/[&<>"']/g, function(m) { return map[m]; });
+            return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
         loadEntries();
