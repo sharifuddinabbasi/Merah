@@ -220,7 +220,11 @@
             let runningTotal = 0;
             const entriesWithRunningTotal = entries.map(item => {
                 const dhrmVal = parseFloat(item.dhrm) || 0;
-                runningTotal += dhrmVal;
+                const isPending = (item.status || "").trim().toLowerCase() === "pending";
+                
+                if (!isPending) {
+                    runningTotal += dhrmVal;
+                }
                 return { ...item, calculatedTotal: runningTotal };
             });
 
@@ -243,15 +247,21 @@
 
             filteredEntries.forEach((item, index) => {
                 const dhrmVal = parseFloat(item.dhrm) || 0;
-                sumDhrm += dhrmVal;
+                const isPending = (item.status || "").trim().toLowerCase() === "pending";
+
+                if (!isPending) {
+                    sumDhrm += dhrmVal;
+                }
+
+                const rowBgClass = isPending ? "bg-red-50 hover:bg-red-100 transition" : "hover:bg-gray-50 transition";
 
                 const row = document.createElement('tr');
-                row.className = "hover:bg-gray-50 transition";
+                row.className = rowBgClass;
                 row.innerHTML = `
                     <td class="py-2 px-1 border border-gray-300 font-medium text-gray-600 text-center">${index + 1}</td>
                     <td class="py-2 px-1 border border-gray-300 text-gray-700 text-center whitespace-nowrap">${formatDateTwoLines(item.date)}</td>
                     <td class="py-2 px-1 border border-gray-300 font-medium text-gray-800">${escapeHtml(item.desc || '')}</td>
-                    <td class="py-2 px-1 border border-gray-300 text-gray-700"><span class="bg-blue-50 text-blue-700 px-1 py-0.5 rounded-full text-[11px] font-medium">${escapeHtml(item.status || '-')}</span></td>
+                    <td class="py-2 px-1 border border-gray-300 text-gray-700"><span class="${isPending ? 'bg-red-100 text-red-700' : 'bg-blue-50 text-blue-700'} px-1 py-0.5 rounded-full text-[11px] font-medium">${escapeHtml(item.status || '-')}</span></td>
                     <td class="py-2 px-1 border border-gray-300 text-right text-gray-700">${dhrmVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="py-2 px-1 border border-gray-300 text-right font-semibold text-blue-600">${Number(item.calculatedTotal || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 `;

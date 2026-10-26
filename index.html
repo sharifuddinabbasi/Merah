@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mehran Account</title>
     
-    <!-- PWA & App Icon Setup (with ?v=2 to force new icon load) -->
+    <!-- PWA & App Icon Setup -->
     <link rel="manifest" href="manifest.json?v=2">
     <meta name="theme-color" content="#1d4ed8">
     <link rel="icon" type="image/png" href="icon.png?v=2">
@@ -37,7 +37,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <!-- Install App Button (Auto shows on Mobile Chrome) -->
+                <!-- Install App Button -->
                 <button id="installAppBtn" onclick="installPWA()" class="hidden bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-2 rounded-lg shadow transition flex items-center gap-1.5 text-sm">
                     <i class="fa-solid fa-download"></i> Install App
                 </button>
@@ -117,7 +117,7 @@
         </div>
     </footer>
 
-    <!-- Add/Edit Modal (Movable & Dynamic Header Color) -->
+    <!-- Add/Edit Modal -->
     <div id="entryModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
         <div id="modalBox" class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all relative">
             <div id="modalHeader" class="px-6 py-4 text-white flex justify-between items-center cursor-move select-none">
@@ -435,7 +435,11 @@
             let runningTotal = 0;
             const entriesWithRunningTotal = entries.map(item => {
                 const dhrmVal = parseFloat(item.dhrm) || 0;
-                runningTotal += dhrmVal;
+                const isPending = (item.status || "").trim().toLowerCase() === "pending";
+                // Agar status pending hai toh running total mein amount jama nahi hogi
+                if (!isPending) {
+                    runningTotal += dhrmVal;
+                }
                 return { ...item, calculatedTotal: runningTotal };
             });
 
@@ -460,16 +464,23 @@
             filteredEntries.forEach((item, index) => {
                 const pkrVal = parseFloat(item.pkr) || 0;
                 const dhrmVal = parseFloat(item.dhrm) || 0;
-                sumPkr += pkrVal;
-                sumDhrm += dhrmVal;
+                const isPending = (item.status || "").trim().toLowerCase() === "pending";
+
+                if (!isPending) {
+                    sumPkr += pkrVal;
+                    sumDhrm += dhrmVal;
+                }
+
+                // Agar pending hai toh row ka background red ho jayega
+                const rowBgClass = isPending ? "bg-red-50 hover:bg-red-100 transition" : "hover:bg-gray-50 transition";
 
                 const row = document.createElement('tr');
-                row.className = "hover:bg-gray-50 transition";
+                row.className = rowBgClass;
                 row.innerHTML = `
                     <td class="py-2 px-1 border border-gray-300 font-medium text-gray-600 text-center cursor-pointer hover:bg-blue-50 transition" onclick="openModal('${item.id}')" title="Click to Edit">${index + 1}</td>
                     <td class="py-2 px-1 border border-gray-300 text-gray-700 text-center cursor-pointer hover:bg-blue-50 transition whitespace-nowrap" ondblclick="makeEditable(this, '${item.id}', 'date', '${item.date}', 'date')">${formatDateTwoLines(item.date)}</td>
                     <td class="py-2 px-1 border border-gray-300 font-medium text-gray-800 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'desc', '${escapeHtml(item.desc)}', 'text')">${escapeHtml(item.desc)}</td>
-                    <td class="py-2 px-1 border border-gray-300 text-gray-700 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'status', '${escapeHtml(item.status || '')}', 'text')"><span class="bg-blue-50 text-blue-700 px-1 py-0.5 rounded-full text-[11px] font-medium">${escapeHtml(item.status || '-')}</span></td>
+                    <td class="py-2 px-1 border border-gray-300 text-gray-700 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'status', '${escapeHtml(item.status || '')}', 'text')"><span class="${isPending ? 'bg-red-100 text-red-700' : 'bg-blue-50 text-blue-700'} px-1 py-0.5 rounded-full text-[11px] font-medium">${escapeHtml(item.status || '-')}</span></td>
                     <td class="py-2 px-1 border border-gray-300 text-right text-gray-700 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'pkr', '${item.pkr}', 'number')">${pkrVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="py-2 px-1 border border-gray-300 text-right text-gray-700 cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'dhrm', '${item.dhrm}', 'number')">${dhrmVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="py-2 px-1 border border-gray-300 text-right font-semibold text-blue-600">${Number(item.calculatedTotal || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
