@@ -207,12 +207,12 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">PKR Amount</label>
-                        <input type="number" step="any" id="entryPkr" placeholder="0.00"
+                        <input type="number" step="1" id="entryPkr" placeholder="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">DHRM Amount</label>
-                        <input type="number" step="any" id="entryDhrm" placeholder="0.00"
+                        <input type="number" step="1" id="entryDhrm" placeholder="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600">
                     </div>
                 </div>
@@ -297,6 +297,10 @@
         let currentUserRole = null;
 
         document.getElementById('entryDate').valueAsDate = new Date();
+
+        function formatInt(val) {
+            return Math.round(parseFloat(val) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+        }
 
         function handleLogin(e) {
             e.preventDefault();
@@ -502,8 +506,8 @@
                     document.getElementById('entryDate').value = item.date;
                     document.getElementById('entryDesc').value = item.desc;
                     document.getElementById('entryStatus').value = item.status || "";
-                    document.getElementById('entryPkr').value = item.pkr;
-                    document.getElementById('entryDhrm').value = item.dhrm;
+                    document.getElementById('entryPkr').value = Math.round(parseFloat(item.pkr) || 0);
+                    document.getElementById('entryDhrm').value = Math.round(parseFloat(item.dhrm) || 0);
                 }
             } else {
                 modalTitle.innerText = "Add New Entry";
@@ -526,8 +530,8 @@
             const date = document.getElementById('entryDate').value;
             const desc = document.getElementById('entryDesc').value;
             const status = document.getElementById('entryStatus').value;
-            const pkr = parseFloat(document.getElementById('entryPkr').value) || 0;
-            const dhrm = parseFloat(document.getElementById('entryDhrm').value) || 0;
+            const pkr = Math.round(parseFloat(document.getElementById('entryPkr').value) || 0);
+            const dhrm = Math.round(parseFloat(document.getElementById('entryDhrm').value) || 0);
 
             const saveBtn = document.getElementById('saveBtn');
             saveBtn.disabled = true;
@@ -560,7 +564,7 @@
 
             let runningTotal = 0;
             const entriesWithRunningTotal = entries.map(item => {
-                const dhrmVal = parseFloat(item.dhrm) || 0;
+                const dhrmVal = Math.round(parseFloat(item.dhrm) || 0);
                 const isPending = (item.status || "").trim().toLowerCase() === "pending";
                 if (!isPending) runningTotal += dhrmVal;
                 return { ...item, calculatedTotal: runningTotal };
@@ -584,8 +588,8 @@
             let sumPkr = 0, sumDhrm = 0;
 
             filteredEntries.forEach((item, index) => {
-                const pkrVal = parseFloat(item.pkr) || 0;
-                const dhrmVal = parseFloat(item.dhrm) || 0;
+                const pkrVal = Math.round(parseFloat(item.pkr) || 0);
+                const dhrmVal = Math.round(parseFloat(item.dhrm) || 0);
                 const isPending = (item.status || "").trim().toLowerCase() === "pending";
 
                 if (!isPending) {
@@ -603,12 +607,12 @@
                         <td class="py-2 px-1 border text-gray-900 uppercase font-semibold text-center cursor-pointer hover:bg-blue-50 transition whitespace-nowrap" ondblclick="makeEditable(this, '${item.id}', 'date', '${item.date}', 'date')">${formatDateTwoLines(item.date)}</td>
                         <td class="py-2 px-1 border text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'desc', '${escapeHtml(item.desc)}', 'text')">${escapeHtml(item.desc)}</td>
                         <td class="py-2 px-1 border text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'status', '${escapeHtml(item.status || '')}', 'text')">${escapeHtml(item.status || '-')}</td>
-                        <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'pkr', '${item.pkr}', 'number')">${pkrVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'dhrm', '${item.dhrm}', 'number')">${dhrmVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold">${Number(item.calculatedTotal || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'pkr', '${pkrVal}', 'number')">${formatInt(pkrVal)}</td>
+                        <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'dhrm', '${dhrmVal}', 'number')">${formatInt(dhrmVal)}</td>
+                        <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold">${formatInt(item.calculatedTotal)}</td>
                         <td class="py-2 px-1 border text-center">
                             <div class="flex items-center justify-center">
-                                <button onclick="promptDelete('${item.id}', '${escapeHtml(item.desc).replace(/'/g, "\\'")}', '${dhrmVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}')" class="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition text-xs" title="Delete">
+                                <button onclick="promptDelete('${item.id}', '${escapeHtml(item.desc).replace(/'/g, "\\'")}', '${formatInt(dhrmVal)}')" class="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition text-xs" title="Delete">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </div>
@@ -620,8 +624,8 @@
                         <td class="py-2 px-[1px] border text-gray-900 uppercase font-semibold text-center whitespace-nowrap">${formatDateTwoLines(item.date)}</td>
                         <td class="py-2 px-[1px] border text-gray-900 uppercase font-semibold">${escapeHtml(item.desc || '')}</td>
                         <td class="py-2 px-[1px] border text-gray-900 uppercase font-semibold">${escapeHtml(item.status || '-')}</td>
-                        <td class="py-2 px-[1px] border text-right text-gray-900 uppercase font-semibold">${dhrmVal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td class="py-2 px-[1px] border text-right text-gray-900 uppercase font-semibold">${Number(item.calculatedTotal || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="py-2 px-[1px] border text-right text-gray-900 uppercase font-semibold">${formatInt(dhrmVal)}</td>
+                        <td class="py-2 px-[1px] border text-right text-gray-900 uppercase font-semibold">${formatInt(item.calculatedTotal)}</td>
                     `;
                 }
                 tableBody.appendChild(row);
@@ -631,9 +635,9 @@
                 tableFooter.innerHTML = `
                     <tr>
                         <td colspan="4" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">Grand Total</td>
-                        <td id="grandTotalPkr" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${sumPkr.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td id="grandTotalDhrm" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${sumDhrm.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td id="grandTotalFinal" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${sumDhrm.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td id="grandTotalPkr" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumPkr)}</td>
+                        <td id="grandTotalDhrm" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
+                        <td id="grandTotalFinal" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
                         <td class="py-2.5 px-1 border"></td>
                     </tr>
                 `;
@@ -641,8 +645,8 @@
                 tableFooter.innerHTML = `
                     <tr>
                         <td colspan="4" class="py-2.5 px-[1px] border text-right text-gray-900 uppercase font-bold">Grand Total</td>
-                        <td id="grandTotalDhrm" class="py-2.5 px-[1px] border text-right text-gray-900 uppercase font-bold">${sumDhrm.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td id="grandTotalFinal" class="py-2.5 px-[1px] border text-right text-gray-900 uppercase font-bold">${sumDhrm.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td id="grandTotalDhrm" class="py-2.5 px-[1px] border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
+                        <td id="grandTotalFinal" class="py-2.5 px-[1px] border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
                     </tr>
                 `;
             }
@@ -651,7 +655,7 @@
         function promptDelete(id, desc, dhrm) {
             deleteTargetId = id;
             document.getElementById('deleteTargetDesc').innerText = desc || '-';
-            document.getElementById('deleteTargetDhrm').innerText = dhrm || '0.00';
+            document.getElementById('deleteTargetDhrm').innerText = dhrm || '0';
             document.getElementById('deleteModal').classList.remove('hidden');
         }
 
@@ -687,7 +691,8 @@
                 ? "w-full px-0.5 py-0.5 border border-red-600 rounded text-[9px] bg-white focus:outline-none" 
                 : "w-full px-1 py-0.5 border border-red-600 rounded text-[9px] bg-white focus:outline-none shadow-inner";
 
-            cell.innerHTML = `<input type="${type}" step="any" value="${currentValue}" class="${inputClass}">`;
+            const stepAttr = type === 'number' ? 'step="1"' : '';
+            cell.innerHTML = `<input type="${type}" ${stepAttr} value="${currentValue}" class="${inputClass}">`;
             const input = cell.querySelector('input');
             input.focus();
 
@@ -699,7 +704,7 @@
 
                 let newValue = input.value;
                 if (!newValue) { cell.innerHTML = originalContent; return; }
-                if (type === 'number') newValue = parseFloat(newValue) || 0;
+                if (type === 'number') newValue = Math.round(parseFloat(newValue) || 0);
                 if (newValue == currentValue) { cell.innerHTML = originalContent; return; }
 
                 try {
