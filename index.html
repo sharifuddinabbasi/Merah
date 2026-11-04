@@ -93,11 +93,20 @@
                 <!-- Left Side / Top Area -->
                 <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full sm:w-auto">
                     <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
-                        <!-- Admin Dashboard Button -->
-                        <div id="adminDashboardBtnContainer" class="hidden">
+                        <!-- Admin Dashboard Container With Accounts Dropdown -->
+                        <div id="adminDashboardBtnContainer" class="hidden flex flex-wrap items-center gap-2">
                             <span class="bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl shadow-inner text-sm flex items-center gap-2 border border-emerald-600/50 whitespace-nowrap">
                                 <i class="fa-solid fa-chart-line text-yellow-300"></i> Admin Dashboard
                             </span>
+                            
+                            <!-- Dropdown List for Accounts -->
+                            <div class="relative">
+                                <select id="accountSelector" onchange="changeAccount(this.value)" 
+                                    class="bg-emerald-950 text-yellow-300 font-bold px-3 py-2 rounded-xl shadow border border-emerald-500/50 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer">
+                                    <option value="Mehran">Mehran Account</option>
+                                    <option value="Aamir">Aamir Account</option>
+                                </select>
+                            </div>
                         </div>
 
                         <!-- Mobile View Logout Button (Right Side on Mobile) -->
@@ -109,7 +118,7 @@
                     <div class="flex items-start space-x-3 w-full justify-between sm:justify-start">
                         <img src="icon.png?v=2" alt="Logo" class="w-11 h-11 rounded-xl shadow-sm bg-white p-0.5 object-contain mt-1 shrink-0" onerror="this.style.display='none'">
                         <div class="flex-grow">
-                            <h1 class="text-2xl font-bold tracking-tight">Mehran Account</h1>
+                            <h1 id="mainHeaderTitle" class="text-2xl font-bold tracking-tight">Mehran Account</h1>
                             <p id="headerSubtitle" class="text-xs text-green-200">Financial Ledger & Transactions Record</p>
                             
                             <!-- Action Buttons Row (Add Entry on Left, JPG on Right) -->
@@ -179,7 +188,7 @@
 
         <footer class="bg-white border-t border-gray-200 py-4 mt-8 w-full">
             <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500">
-                Mehran Account &copy; 2026. All rights reserved.
+                <span id="footerAccountTitle">Mehran Account</span> &copy; 2026. All rights reserved.
             </div>
         </footer>
     </div>
@@ -255,7 +264,7 @@
         </div>
     </div>
 
-    <!-- JPG Export Options Modal (Same as Image 2) -->
+    <!-- JPG Export Options Modal -->
     <div id="jpgExportModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all p-6 text-center">
             <h3 class="font-bold text-xl text-blue-600 mb-3">Export Options</h3>
@@ -336,6 +345,8 @@
         let activeSaveHandler = null;
         let deleteTargetId = null;
         let currentUserRole = null;
+        let currentAccount = 'Mehran'; // Admin defaults to Mehran, User defaults to Aamir
+        let unsubscribeSnapshot = null;
 
         document.getElementById('entryDate').valueAsDate = new Date();
 
@@ -350,9 +361,11 @@
 
             if (user === "admin" && pass === "admin123") {
                 currentUserRole = 'admin';
+                currentAccount = 'Mehran';
                 initApp();
             } else if (user === "user" && pass === "user123") {
                 currentUserRole = 'user';
+                currentAccount = 'Aamir'; // User gets Aamir data only
                 initApp();
             } else {
                 document.getElementById('loginView').classList.add('hidden');
@@ -368,7 +381,12 @@
         }
 
         function handleLogout() {
+            if (unsubscribeSnapshot) {
+                unsubscribeSnapshot();
+                unsubscribeSnapshot = null;
+            }
             currentUserRole = null;
+            currentAccount = 'Mehran';
             const appContainer = document.getElementById('appContainer');
             appContainer.classList.add('hidden');
             appContainer.classList.remove('flex');
@@ -376,6 +394,24 @@
             document.getElementById('loginView').classList.remove('hidden');
             document.getElementById('loginUser').value = '';
             document.getElementById('loginPass').value = '';
+        }
+
+        function changeAccount(newAcc) {
+            currentAccount = newAcc;
+            updateAccountHeadings();
+            loadEntries();
+        }
+
+        function updateAccountHeadings() {
+            const accTitle = `${currentAccount} Account`;
+            document.getElementById('mainHeaderTitle').innerText = accTitle;
+            document.getElementById('footerAccountTitle').innerText = accTitle;
+            const subtitle = document.getElementById('headerSubtitle');
+            if (currentUserRole === 'admin') {
+                subtitle.innerText = `Financial Ledger & Transactions Record (Admin - ${currentAccount})`;
+            } else {
+                subtitle.innerText = `Financial Ledger & Transactions Record (View Only - ${currentAccount})`;
+            }
         }
 
         function initApp() {
@@ -386,26 +422,26 @@
             appContainer.classList.remove('hidden');
             appContainer.classList.add('flex');
 
-            const subtitle = document.getElementById('headerSubtitle');
             const addEntryBtnContainer = document.getElementById('addEntryBtnContainer');
             const adminDashContainer = document.getElementById('adminDashboardBtnContainer');
+            const accountSelector = document.getElementById('accountSelector');
             const wrapperBox = document.getElementById('tableWrapperBox');
             const table = document.getElementById('mainTable');
 
             if (currentUserRole === 'admin') {
-                subtitle.innerText = "Financial Ledger & Transactions Record (Admin)";
                 addEntryBtnContainer.classList.remove('hidden');
                 adminDashContainer.classList.remove('hidden');
+                accountSelector.value = currentAccount;
                 wrapperBox.className = "bg-white rounded-xl shadow-sm border overflow-hidden w-full max-w-[500px] sm:max-w-7xl mx-auto";
                 table.className = "w-[500px] sm:w-full text-left border-collapse table-fixed text-[9px] text-gray-900 uppercase font-semibold";
             } else {
-                subtitle.innerText = "Financial Ledger & Transactions Record (View Only)";
                 addEntryBtnContainer.classList.add('hidden');
                 adminDashContainer.classList.add('hidden');
                 wrapperBox.className = "bg-white rounded-xl shadow-sm border overflow-hidden w-full max-w-[344px] sm:max-w-5xl mx-auto";
                 table.className = "w-[344px] sm:w-full text-left border-collapse table-fixed text-[9px] text-gray-900 uppercase font-semibold";
             }
 
+            updateAccountHeadings();
             setupTableHeaders();
             loadEntries();
         }
@@ -496,12 +532,22 @@
         }
 
         function loadEntries() {
-            db.collection("mehran_entries")
+            if (unsubscribeSnapshot) {
+                unsubscribeSnapshot();
+            }
+
+            document.getElementById('loadingState').classList.remove('hidden');
+
+            // Hamesha 'mehran_entries' collection use hogi taake permission error na aye
+            unsubscribeSnapshot = db.collection("mehran_entries")
               .onSnapshot((snapshot) => {
                   entries = [];
                   snapshot.forEach((doc) => {
                       const data = doc.data();
-                      if (data.pkr !== undefined && data.desc !== "New Description") {
+                      // Purani entries jisme account tag nahi tha unhe 'Mehran' count karein
+                      const itemAccount = data.account || 'Mehran';
+                      
+                      if (data.pkr !== undefined && data.desc !== "New Description" && itemAccount === currentAccount) {
                           entries.push({ id: doc.id, ...data });
                       }
                   });
@@ -537,7 +583,7 @@
             modal.classList.remove('hidden');
             
             if (id !== null) {
-                modalTitle.innerText = "Edit Entry";
+                modalTitle.innerText = `Edit Entry (${currentAccount})`;
                 modalHeader.className = "px-6 py-4 text-white flex justify-between items-center cursor-move select-none bg-red-600";
                 saveBtn.className = "px-4 py-2 text-white rounded-lg text-sm font-semibold shadow transition bg-red-600 hover:bg-red-700";
                 
@@ -551,7 +597,7 @@
                     document.getElementById('entryDhrm').value = Math.round(parseFloat(item.dhrm) || 0);
                 }
             } else {
-                modalTitle.innerText = "Add New Entry";
+                modalTitle.innerText = `Add New Entry (${currentAccount})`;
                 modalHeader.className = "px-6 py-4 text-white flex justify-between items-center cursor-move select-none bg-green-600";
                 saveBtn.className = "px-4 py-2 text-white rounded-lg text-sm font-semibold shadow transition bg-green-600 hover:bg-green-700";
                 
@@ -580,9 +626,24 @@
 
             try {
                 if (editId === "") {
-                    await db.collection("mehran_entries").add({ date, desc, status, pkr, dhrm, createdAt: Date.now() });
+                    await db.collection("mehran_entries").add({ 
+                        date, 
+                        desc, 
+                        status, 
+                        pkr, 
+                        dhrm, 
+                        account: currentAccount,
+                        createdAt: Date.now() 
+                    });
                 } else {
-                    await db.collection("mehran_entries").doc(editId).update({ date, desc, status, pkr, dhrm });
+                    await db.collection("mehran_entries").doc(editId).update({ 
+                        date, 
+                        desc, 
+                        status, 
+                        pkr, 
+                        dhrm,
+                        account: currentAccount
+                    });
                 }
                 closeModal();
             } catch (error) {
@@ -735,7 +796,6 @@
             const isAdmin = currentUserRole === 'admin';
             const exportWidth = isAdmin ? 500 : 344;
 
-            // Temporary hidden container for crisp JPG capture
             const tempContainer = document.createElement('div');
             tempContainer.style.position = 'fixed';
             tempContainer.style.left = '-9999px';
@@ -836,7 +896,7 @@
 
             tempContainer.innerHTML = `
                 <div style="text-align: center; margin-bottom: 6px; font-family: 'Inter', sans-serif;">
-                    <h2 style="font-size: 14px; font-weight: 700; color: #166534; margin: 0; text-transform: uppercase;">Mehran Account</h2>
+                    <h2 style="font-size: 14px; font-weight: 700; color: #166534; margin: 0; text-transform: uppercase;">${currentAccount} Account</h2>
                     <p style="font-size: 8px; color: #4b5563; margin: 0;">Financial Ledger (${mode === 'all' ? 'All Data' : 'S.No ' + fromSr + ' to ' + toSr})</p>
                 </div>
                 <table style="width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; color: #111827; text-transform: uppercase; font-weight: 600; font-family: 'Inter', sans-serif;">
@@ -854,7 +914,7 @@
                     backgroundColor: '#ffffff'
                 });
                 const link = document.createElement('a');
-                link.download = `Mehran_Account_${mode === 'all' ? 'All_Data' : fromSr + '_to_' + toSr}.jpg`;
+                link.download = `${currentAccount}_Account_${mode === 'all' ? 'All_Data' : fromSr + '_to_' + toSr}.jpg`;
                 link.href = canvas.toDataURL('image/jpeg', 0.95);
                 link.click();
             } catch (err) {
