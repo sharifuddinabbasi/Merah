@@ -105,6 +105,7 @@
                                     class="bg-emerald-950 text-yellow-300 font-bold px-3 py-2 rounded-xl shadow border border-emerald-500/50 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer">
                                     <option value="Mehran">Mehran Account</option>
                                     <option value="Aamir">Aamir Account</option>
+                                    <option value="Expenses">Expenses</option>
                                 </select>
                             </div>
                         </div>
@@ -215,19 +216,19 @@
                     <input type="text" id="entryDesc" placeholder="Enter description..." required
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600">
                 </div>
-                <div>
+                <div id="statusFieldContainer">
                     <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Status</label>
-                    <input type="text" id="entryStatus" placeholder="Enter status (e.g. Paid, Pending)..." required
+                    <input type="text" id="entryStatus" placeholder="Enter status (e.g. Paid, Pending)..."
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">PKR Amount</label>
+                        <label id="lblAmount1" class="block text-xs font-semibold uppercase text-gray-500 mb-1">PKR Amount</label>
                         <input type="number" step="1" id="entryPkr" placeholder="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">DHRM Amount</label>
+                        <label id="lblAmount2" class="block text-xs font-semibold uppercase text-gray-500 mb-1">DHRM Amount</label>
                         <input type="number" step="1" id="entryDhrm" placeholder="0"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-600">
                     </div>
@@ -396,14 +397,29 @@
             document.getElementById('loginPass').value = '';
         }
 
+        function updateTableWidth() {
+            const wrapperBox = document.getElementById('tableWrapperBox');
+            const table = document.getElementById('mainTable');
+            if (currentUserRole === 'admin') {
+                const widthVal = currentAccount === 'Expenses' ? '400px' : '500px';
+                wrapperBox.className = `bg-white rounded-xl shadow-sm border overflow-hidden w-full max-w-[${widthVal}] sm:max-w-7xl mx-auto`;
+                table.className = `w-[${widthVal}] sm:w-full text-left border-collapse table-fixed text-[9px] text-gray-900 uppercase font-semibold`;
+            } else {
+                wrapperBox.className = "bg-white rounded-xl shadow-sm border overflow-hidden w-full max-w-[344px] sm:max-w-5xl mx-auto";
+                table.className = "w-[344px] sm:w-full text-left border-collapse table-fixed text-[9px] text-gray-900 uppercase font-semibold";
+            }
+        }
+
         function changeAccount(newAcc) {
             currentAccount = newAcc;
             updateAccountHeadings();
+            updateTableWidth();
+            setupTableHeaders();
             loadEntries();
         }
 
         function updateAccountHeadings() {
-            const accTitle = `${currentAccount} Account`;
+            const accTitle = currentAccount === 'Expenses' ? 'Expenses Account' : `${currentAccount} Account`;
             document.getElementById('mainHeaderTitle').innerText = accTitle;
             document.getElementById('footerAccountTitle').innerText = accTitle;
             const subtitle = document.getElementById('headerSubtitle');
@@ -425,23 +441,18 @@
             const addEntryBtnContainer = document.getElementById('addEntryBtnContainer');
             const adminDashContainer = document.getElementById('adminDashboardBtnContainer');
             const accountSelector = document.getElementById('accountSelector');
-            const wrapperBox = document.getElementById('tableWrapperBox');
-            const table = document.getElementById('mainTable');
 
             if (currentUserRole === 'admin') {
                 addEntryBtnContainer.classList.remove('hidden');
                 adminDashContainer.classList.remove('hidden');
                 accountSelector.value = currentAccount;
-                wrapperBox.className = "bg-white rounded-xl shadow-sm border overflow-hidden w-full max-w-[500px] sm:max-w-7xl mx-auto";
-                table.className = "w-[500px] sm:w-full text-left border-collapse table-fixed text-[9px] text-gray-900 uppercase font-semibold";
             } else {
                 addEntryBtnContainer.classList.add('hidden');
                 adminDashContainer.classList.add('hidden');
-                wrapperBox.className = "bg-white rounded-xl shadow-sm border overflow-hidden w-full max-w-[344px] sm:max-w-5xl mx-auto";
-                table.className = "w-[344px] sm:w-full text-left border-collapse table-fixed text-[9px] text-gray-900 uppercase font-semibold";
             }
 
             updateAccountHeadings();
+            updateTableWidth();
             setupTableHeaders();
             loadEntries();
         }
@@ -449,18 +460,32 @@
         function setupTableHeaders() {
             const thead = document.getElementById('tableHeader');
             if (currentUserRole === 'admin') {
-                thead.innerHTML = `
-                    <tr class="bg-gray-100 uppercase text-gray-900 font-bold tracking-wider text-[9px]">
-                        <th class="py-2.5 px-1 border text-center" style="width: 5%;">Sr. No.</th>
-                        <th class="py-2.5 px-1 border text-center" style="width: 6%;">Date</th>
-                        <th class="py-2.5 px-1 border" style="width: 18%;">Description</th>
-                        <th class="py-2.5 px-1 border" style="width: 16%;">Status</th>
-                        <th class="py-2.5 px-1 border text-right" style="width: 12%;">PKR</th>
-                        <th class="py-2.5 px-1 border text-right" style="width: 12%;">DHRM</th>
-                        <th class="py-2.5 px-1 border text-right" style="width: 12%;">Total</th>
-                        <th class="py-2.5 px-1 border text-center" style="width: 19%;"><i class="fa-solid fa-trash-can text-gray-900"></i></th>
-                    </tr>
-                `;
+                if (currentAccount === 'Expenses') {
+                    thead.innerHTML = `
+                        <tr class="bg-gray-100 uppercase text-gray-900 font-bold tracking-wider text-[9px]">
+                            <th class="py-2.5 px-1 border text-center" style="width: 7%;">Sr. No.</th>
+                            <th class="py-2.5 px-1 border text-center" style="width: 9%;">Date</th>
+                            <th class="py-2.5 px-1 border" style="width: 30%;">Description</th>
+                            <th class="py-2.5 px-1 border text-right" style="width: 16%;">Expenses</th>
+                            <th class="py-2.5 px-1 border text-right" style="width: 16%;">Income</th>
+                            <th class="py-2.5 px-1 border text-right" style="width: 16%;">Total</th>
+                            <th class="py-2.5 px-1 border text-center" style="width: 6%;"><i class="fa-solid fa-trash-can text-gray-900"></i></th>
+                        </tr>
+                    `;
+                } else {
+                    thead.innerHTML = `
+                        <tr class="bg-gray-100 uppercase text-gray-900 font-bold tracking-wider text-[9px]">
+                            <th class="py-2.5 px-1 border text-center" style="width: 5%;">Sr. No.</th>
+                            <th class="py-2.5 px-1 border text-center" style="width: 6%;">Date</th>
+                            <th class="py-2.5 px-1 border" style="width: 18%;">Description</th>
+                            <th class="py-2.5 px-1 border" style="width: 16%;">Status</th>
+                            <th class="py-2.5 px-1 border text-right" style="width: 12%;">PKR</th>
+                            <th class="py-2.5 px-1 border text-right" style="width: 12%;">DHRM</th>
+                            <th class="py-2.5 px-1 border text-right" style="width: 12%;">Total</th>
+                            <th class="py-2.5 px-1 border text-center" style="width: 19%;"><i class="fa-solid fa-trash-can text-gray-900"></i></th>
+                        </tr>
+                    `;
+                }
             } else {
                 thead.innerHTML = `
                     <tr class="bg-gray-100 uppercase text-gray-900 font-bold tracking-wider text-[9px]">
@@ -538,16 +563,14 @@
 
             document.getElementById('loadingState').classList.remove('hidden');
 
-            // Hamesha 'mehran_entries' collection use hogi taake permission error na aye
             unsubscribeSnapshot = db.collection("mehran_entries")
               .onSnapshot((snapshot) => {
                   entries = [];
                   snapshot.forEach((doc) => {
                       const data = doc.data();
-                      // Purani entries jisme account tag nahi tha unhe 'Mehran' count karein
                       const itemAccount = data.account || 'Mehran';
                       
-                      if (data.pkr !== undefined && data.desc !== "New Description" && itemAccount === currentAccount) {
+                      if (data.desc !== "New Description" && itemAccount === currentAccount) {
                           entries.push({ id: doc.id, ...data });
                       }
                   });
@@ -577,10 +600,23 @@
             const modalTitle = document.getElementById('modalTitle');
             const modalHeader = document.getElementById('modalHeader');
             const saveBtn = document.getElementById('saveBtn');
+            const statusContainer = document.getElementById('statusFieldContainer');
+            const lblAmount1 = document.getElementById('lblAmount1');
+            const lblAmount2 = document.getElementById('lblAmount2');
             
             translateX = 0; translateY = 0;
             modalBox.style.transform = 'translate(0px, 0px)';
             modal.classList.remove('hidden');
+
+            if (currentAccount === 'Expenses') {
+                statusContainer.style.display = 'none';
+                lblAmount1.innerText = "Expense Amount";
+                lblAmount2.innerText = "Income Amount";
+            } else {
+                statusContainer.style.display = 'block';
+                lblAmount1.innerText = "PKR Amount";
+                lblAmount2.innerText = "DHRM Amount";
+            }
             
             if (id !== null) {
                 modalTitle.innerText = `Edit Entry (${currentAccount})`;
@@ -616,7 +652,7 @@
             const editId = document.getElementById('editId').value;
             const date = document.getElementById('entryDate').value;
             const desc = document.getElementById('entryDesc').value;
-            const status = document.getElementById('entryStatus').value;
+            const status = currentAccount === 'Expenses' ? '' : document.getElementById('entryStatus').value;
             const pkr = Math.round(parseFloat(document.getElementById('entryPkr').value) || 0);
             const dhrm = Math.round(parseFloat(document.getElementById('entryDhrm').value) || 0);
 
@@ -665,10 +701,18 @@
             tableBody.innerHTML = "";
 
             let runningTotal = 0;
+            const isExpensesAccount = (currentAccount === 'Expenses');
+
             const entriesWithRunningTotal = entries.map(item => {
+                const pkrVal = Math.round(parseFloat(item.pkr) || 0);
                 const dhrmVal = Math.round(parseFloat(item.dhrm) || 0);
                 const isPending = (item.status || "").trim().toLowerCase() === "pending";
-                if (!isPending) runningTotal += dhrmVal;
+
+                if (isExpensesAccount) {
+                    runningTotal += (dhrmVal - pkrVal);
+                } else {
+                    if (!isPending) runningTotal += dhrmVal;
+                }
                 return { ...item, calculatedTotal: runningTotal };
             });
 
@@ -696,32 +740,55 @@
                 const dhrmVal = Math.round(parseFloat(item.dhrm) || 0);
                 const isPending = (item.status || "").trim().toLowerCase() === "pending";
 
-                if (!isPending) {
+                if (isExpensesAccount) {
                     sumPkr += pkrVal;
                     sumDhrm += dhrmVal;
+                } else {
+                    if (!isPending) {
+                        sumPkr += pkrVal;
+                        sumDhrm += dhrmVal;
+                    }
                 }
 
-                const rowBgClass = isPending ? "bg-red-50 hover:bg-red-100 transition" : "hover:bg-gray-50 transition";
+                const rowBgClass = (isPending && !isExpensesAccount) ? "bg-red-50 hover:bg-red-100 transition" : "hover:bg-gray-50 transition";
                 const row = document.createElement('tr');
                 row.className = rowBgClass;
 
                 if (currentUserRole === 'admin') {
-                    row.innerHTML = `
-                        <td class="py-2 px-1 border text-gray-900 uppercase font-semibold text-center cursor-pointer hover:bg-blue-50 transition" onclick="openModal('${item.id}')" title="Click to Edit">${index + 1}</td>
-                        <td class="py-2 px-1 border text-gray-900 uppercase font-semibold text-center cursor-pointer hover:bg-blue-50 transition whitespace-nowrap" ondblclick="makeEditable(this, '${item.id}', 'date', '${item.date}', 'date')">${formatDateTwoLines(item.date)}</td>
-                        <td class="py-2 px-1 border text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'desc', '${escapeHtml(item.desc)}', 'text')">${escapeHtml(item.desc)}</td>
-                        <td class="py-2 px-1 border text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'status', '${escapeHtml(item.status || '')}', 'text')">${escapeHtml(item.status || '-')}</td>
-                        <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'pkr', '${pkrVal}', 'number')">${formatInt(pkrVal)}</td>
-                        <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'dhrm', '${dhrmVal}', 'number')">${formatInt(dhrmVal)}</td>
-                        <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold">${formatInt(item.calculatedTotal)}</td>
-                        <td class="py-2 px-1 border text-center">
-                            <div class="flex items-center justify-center">
-                                <button onclick="promptDelete('${item.id}', '${escapeHtml(item.desc).replace(/'/g, "\\'")}', '${formatInt(dhrmVal)}')" class="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition text-xs" title="Delete">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </div>
-                        </td>
-                    `;
+                    if (isExpensesAccount) {
+                        row.innerHTML = `
+                            <td class="py-2 px-1 border text-gray-900 uppercase font-semibold text-center cursor-pointer hover:bg-blue-50 transition" onclick="openModal('${item.id}')" title="Click to Edit">${index + 1}</td>
+                            <td class="py-2 px-1 border text-gray-900 uppercase font-semibold text-center cursor-pointer hover:bg-blue-50 transition whitespace-nowrap" ondblclick="makeEditable(this, '${item.id}', 'date', '${item.date}', 'date')">${formatDateTwoLines(item.date)}</td>
+                            <td class="py-2 px-1 border text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'desc', '${escapeHtml(item.desc)}', 'text')">${escapeHtml(item.desc)}</td>
+                            <td class="py-2 px-1 border text-right text-red-600 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'pkr', '${pkrVal}', 'number')">${formatInt(pkrVal)}</td>
+                            <td class="py-2 px-1 border text-right text-green-700 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'dhrm', '${dhrmVal}', 'number')">${formatInt(dhrmVal)}</td>
+                            <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold">${formatInt(item.calculatedTotal)}</td>
+                            <td class="py-2 px-1 border text-center">
+                                <div class="flex items-center justify-center">
+                                    <button onclick="promptDelete('${item.id}', '${escapeHtml(item.desc).replace(/'/g, "\\'")}', '${formatInt(dhrmVal)}')" class="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition text-xs" title="Delete">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        row.innerHTML = `
+                            <td class="py-2 px-1 border text-gray-900 uppercase font-semibold text-center cursor-pointer hover:bg-blue-50 transition" onclick="openModal('${item.id}')" title="Click to Edit">${index + 1}</td>
+                            <td class="py-2 px-1 border text-gray-900 uppercase font-semibold text-center cursor-pointer hover:bg-blue-50 transition whitespace-nowrap" ondblclick="makeEditable(this, '${item.id}', 'date', '${item.date}', 'date')">${formatDateTwoLines(item.date)}</td>
+                            <td class="py-2 px-1 border text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'desc', '${escapeHtml(item.desc)}', 'text')">${escapeHtml(item.desc)}</td>
+                            <td class="py-2 px-1 border text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'status', '${escapeHtml(item.status || '')}', 'text')">${escapeHtml(item.status || '-')}</td>
+                            <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'pkr', '${pkrVal}', 'number')">${formatInt(pkrVal)}</td>
+                            <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold cursor-pointer hover:bg-blue-50 transition" ondblclick="makeEditable(this, '${item.id}', 'dhrm', '${dhrmVal}', 'number')">${formatInt(dhrmVal)}</td>
+                            <td class="py-2 px-1 border text-right text-gray-900 uppercase font-semibold">${formatInt(item.calculatedTotal)}</td>
+                            <td class="py-2 px-1 border text-center">
+                                <div class="flex items-center justify-center">
+                                    <button onclick="promptDelete('${item.id}', '${escapeHtml(item.desc).replace(/'/g, "\\'")}', '${formatInt(dhrmVal)}')" class="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition text-xs" title="Delete">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        `;
+                    }
                 } else {
                     row.innerHTML = `
                         <td class="py-2 px-[1px] border text-gray-900 uppercase font-semibold text-center">${index + 1}</td>
@@ -736,15 +803,27 @@
             });
 
             if (currentUserRole === 'admin') {
-                tableFooter.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">Grand Total</td>
-                        <td id="grandTotalPkr" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumPkr)}</td>
-                        <td id="grandTotalDhrm" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
-                        <td id="grandTotalFinal" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
-                        <td class="py-2.5 px-1 border"></td>
-                    </tr>
-                `;
+                if (isExpensesAccount) {
+                    tableFooter.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">Grand Total</td>
+                            <td class="py-2.5 px-1 border text-right text-red-600 uppercase font-bold">${formatInt(sumPkr)}</td>
+                            <td class="py-2.5 px-1 border text-right text-green-700 uppercase font-bold">${formatInt(sumDhrm)}</td>
+                            <td class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm - sumPkr)}</td>
+                            <td class="py-2.5 px-1 border"></td>
+                        </tr>
+                    `;
+                } else {
+                    tableFooter.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">Grand Total</td>
+                            <td id="grandTotalPkr" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumPkr)}</td>
+                            <td id="grandTotalDhrm" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
+                            <td id="grandTotalFinal" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
+                            <td class="py-2.5 px-1 border"></td>
+                        </tr>
+                    `;
+                }
             } else {
                 tableFooter.innerHTML = `
                     <tr>
@@ -794,7 +873,8 @@
 
             const selectedItems = currentFilteredEntries.slice(fromSr - 1, toSr);
             const isAdmin = currentUserRole === 'admin';
-            const exportWidth = isAdmin ? 500 : 344;
+            const isExpensesAccount = (currentAccount === 'Expenses');
+            const exportWidth = isAdmin ? (isExpensesAccount ? 400 : 500) : 344;
 
             const tempContainer = document.createElement('div');
             tempContainer.style.position = 'fixed';
@@ -808,17 +888,30 @@
 
             let headerHtml = '';
             if (isAdmin) {
-                headerHtml = `
-                    <tr style="background-color: #f3f4f6;">
-                        <th style="width: 6%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: center;">SR. NO.</th>
-                        <th style="width: 8%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: center;">DATE</th>
-                        <th style="width: 24%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: left;">DESCRIPTION</th>
-                        <th style="width: 18%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: left;">STATUS</th>
-                        <th style="width: 15%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">PKR</th>
-                        <th style="width: 14%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">DHRM</th>
-                        <th style="width: 15%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">TOTAL</th>
-                    </tr>
-                `;
+                if (isExpensesAccount) {
+                    headerHtml = `
+                        <tr style="background-color: #f3f4f6;">
+                            <th style="width: 8%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: center;">SR. NO.</th>
+                            <th style="width: 10%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: center;">DATE</th>
+                            <th style="width: 34%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: left;">DESCRIPTION</th>
+                            <th style="width: 16%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">EXPENSES</th>
+                            <th style="width: 16%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">INCOME</th>
+                            <th style="width: 16%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">TOTAL</th>
+                        </tr>
+                    `;
+                } else {
+                    headerHtml = `
+                        <tr style="background-color: #f3f4f6;">
+                            <th style="width: 6%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: center;">SR. NO.</th>
+                            <th style="width: 8%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: center;">DATE</th>
+                            <th style="width: 24%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: left;">DESCRIPTION</th>
+                            <th style="width: 18%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: left;">STATUS</th>
+                            <th style="width: 15%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">PKR</th>
+                            <th style="width: 14%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">DHRM</th>
+                            <th style="width: 15%; padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">TOTAL</th>
+                        </tr>
+                    `;
+                }
             } else {
                 headerHtml = `
                     <tr style="background-color: #f3f4f6;">
@@ -839,25 +932,43 @@
                 const dhrmVal = Math.round(parseFloat(item.dhrm) || 0);
                 const isPending = (item.status || "").trim().toLowerCase() === "pending";
 
-                if (!isPending) {
+                if (isExpensesAccount) {
                     sumPkr += pkrVal;
                     sumDhrm += dhrmVal;
+                } else {
+                    if (!isPending) {
+                        sumPkr += pkrVal;
+                        sumDhrm += dhrmVal;
+                    }
                 }
 
-                const bgStyle = isPending ? "background-color: #fef2f2;" : "background-color: #ffffff;";
+                const bgStyle = (isPending && !isExpensesAccount) ? "background-color: #fef2f2;" : "background-color: #ffffff;";
 
                 if (isAdmin) {
-                    rowsHtml += `
-                        <tr style="${bgStyle}">
-                            <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: center;">${srNo}</td>
-                            <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: center; white-space: nowrap;">${formatDateTwoLines(item.date)}</td>
-                            <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB;">${escapeHtml(item.desc || '')}</td>
-                            <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB;">${escapeHtml(item.status || '-')}</td>
-                            <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(pkrVal)}</td>
-                            <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(dhrmVal)}</td>
-                            <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(item.calculatedTotal)}</td>
-                        </tr>
-                    `;
+                    if (isExpensesAccount) {
+                        rowsHtml += `
+                            <tr style="${bgStyle}">
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: center;">${srNo}</td>
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: center; white-space: nowrap;">${formatDateTwoLines(item.date)}</td>
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB;">${escapeHtml(item.desc || '')}</td>
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: right; color: #dc2626;">${formatInt(pkrVal)}</td>
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: right; color: #15803d;">${formatInt(dhrmVal)}</td>
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(item.calculatedTotal)}</td>
+                            </tr>
+                        `;
+                    } else {
+                        rowsHtml += `
+                            <tr style="${bgStyle}">
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: center;">${srNo}</td>
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: center; white-space: nowrap;">${formatDateTwoLines(item.date)}</td>
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB;">${escapeHtml(item.desc || '')}</td>
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB;">${escapeHtml(item.status || '-')}</td>
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(pkrVal)}</td>
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(dhrmVal)}</td>
+                                <td style="padding: 5px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(item.calculatedTotal)}</td>
+                            </tr>
+                        `;
+                    }
                 } else {
                     rowsHtml += `
                         <tr style="${bgStyle}">
@@ -872,18 +983,29 @@
                 }
             });
 
-            const lastTotalVal = selectedItems.length > 0 ? selectedItems[selectedItems.length - 1].calculatedTotal : sumDhrm;
+            const lastTotalVal = selectedItems.length > 0 ? selectedItems[selectedItems.length - 1].calculatedTotal : (isExpensesAccount ? (sumDhrm - sumPkr) : sumDhrm);
 
             let footerHtml = '';
             if (isAdmin) {
-                footerHtml = `
-                    <tr style="background-color: #f3f4f6; font-weight: bold;">
-                        <td colspan="4" style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">GRAND TOTAL</td>
-                        <td style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(sumPkr)}</td>
-                        <td style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(sumDhrm)}</td>
-                        <td style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(lastTotalVal)}</td>
-                    </tr>
-                `;
+                if (isExpensesAccount) {
+                    footerHtml = `
+                        <tr style="background-color: #f3f4f6; font-weight: bold;">
+                            <td colspan="3" style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">GRAND TOTAL</td>
+                            <td style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right; color: #dc2626;">${formatInt(sumPkr)}</td>
+                            <td style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right; color: #15803d;">${formatInt(sumDhrm)}</td>
+                            <td style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(lastTotalVal)}</td>
+                        </tr>
+                    `;
+                } else {
+                    footerHtml = `
+                        <tr style="background-color: #f3f4f6; font-weight: bold;">
+                            <td colspan="4" style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">GRAND TOTAL</td>
+                            <td style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(sumPkr)}</td>
+                            <td style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(sumDhrm)}</td>
+                            <td style="padding: 6px 2px; border: 0.5px solid #D1D5DB; text-align: right;">${formatInt(lastTotalVal)}</td>
+                        </tr>
+                    `;
+                }
             } else {
                 footerHtml = `
                     <tr style="background-color: #f3f4f6; font-weight: bold;">
