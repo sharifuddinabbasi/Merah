@@ -24,14 +24,33 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        /* Custom 0.5px Border Styling with #D1D5DB color */
         #mainTable th, #mainTable td, #tableWrapperBox {
             border-width: 0.5px !important;
             border-color: #D1D5DB !important;
         }
+        @keyframes slideInDown {
+            from { transform: translate(-50%, -100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        .toast-animate {
+            animation: slideInDown 0.3s ease-out forwards;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen w-full flex flex-col justify-between">
+
+    <!-- ================= BEAUTIFUL CUSTOM TOAST NOTIFICATION ================= -->
+    <div id="customToast" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[100] hidden">
+        <div id="toastBox" class="flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-white font-semibold text-sm min-w-[280px] max-w-sm justify-between">
+            <div class="flex items-center gap-3">
+                <i id="toastIcon" class="fa-solid fa-circle-check text-xl"></i>
+                <span id="toastMessage">Message here</span>
+            </div>
+            <button onclick="hideToast()" class="text-white/80 hover:text-white ml-2">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
 
     <!-- ================= 1. LOGIN VIEW ================= -->
     <div id="loginView" class="fixed inset-0 bg-gradient-to-br from-emerald-900 via-green-900 to-slate-900 flex items-center justify-center p-4 z-50">
@@ -64,7 +83,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="w-full py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl text-sm font-semibold shadow-lg transition duration-200 flex items-center justify-center gap-2">
+                <button type="submit" id="loginSubmitBtn" class="w-full py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl text-sm font-semibold shadow-lg transition duration-200 flex items-center justify-center gap-2">
                     <i class="fa-solid fa-right-to-bracket"></i> Login
                 </button>
             </form>
@@ -72,7 +91,7 @@
     </div>
 
 
-    <!-- ================= 2. FULL SCREEN PAKISTAN MAP VIEW (On Wrong Password) ================= -->
+    <!-- ================= 2. FULL SCREEN PAKISTAN MAP VIEW ================= -->
     <div id="mapView" class="fixed inset-0 bg-gradient-to-b from-emerald-950 via-green-900 to-black flex flex-col items-center justify-between p-4 z-50 hidden">
         <div class="pt-4 z-10">
             <button onclick="backToLogin()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2.5 rounded-full shadow-2xl transition flex items-center gap-2 text-sm border border-red-400/30">
@@ -90,16 +109,13 @@
         <header class="bg-gradient-to-r from-emerald-800 to-green-900 text-white shadow-md w-full">
             <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                 
-                <!-- Left Side / Top Area -->
                 <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full sm:w-auto">
                     <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
-                        <!-- Admin Dashboard Container With Accounts Dropdown -->
                         <div id="adminDashboardBtnContainer" class="hidden flex flex-wrap items-center gap-2">
-                            <span class="bg-emerald-700 text-white font-bold px-3 py-2 rounded-xl shadow-inner text-sm flex items-center gap-2 border border-emerald-600/50 whitespace-nowrap">
+                            <button onclick="openAdminDashboardModal()" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl shadow transition text-sm flex items-center gap-2 border border-emerald-600/50 whitespace-nowrap cursor-pointer">
                                 <i class="fa-solid fa-chart-line text-yellow-300"></i> Admin Dashboard
-                            </span>
+                            </button>
                             
-                            <!-- Dropdown List for Accounts -->
                             <div class="relative">
                                 <select id="accountSelector" onchange="changeAccount(this.value)" 
                                     class="bg-emerald-950 text-yellow-300 font-bold px-3 py-2 rounded-xl shadow border border-emerald-500/50 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer">
@@ -110,7 +126,6 @@
                             </div>
                         </div>
 
-                        <!-- Mobile View Logout Button (Right Side on Mobile) -->
                         <button onclick="handleLogout()" class="sm:hidden bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-2 rounded-lg shadow transition flex items-center gap-1.5 text-sm ml-auto">
                             <i class="fa-solid fa-right-from-bracket"></i> Logout
                         </button>
@@ -122,7 +137,6 @@
                             <h1 id="mainHeaderTitle" class="text-2xl font-bold tracking-tight">Mehran Account</h1>
                             <p id="headerSubtitle" class="text-xs text-green-200">Financial Ledger & Transactions Record</p>
                             
-                            <!-- Action Buttons Row (Add Entry on Left, JPG on Right) -->
                             <div class="mt-2.5 flex items-center justify-between gap-3 w-full">
                                 <div id="addEntryBtnContainer" class="hidden">
                                     <button onclick="openModal()" class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2 text-sm">
@@ -137,13 +151,11 @@
                     </div>
                 </div>
 
-                <!-- Right Side Controls (Install App & Desktop Logout) -->
                 <div class="flex items-center justify-end gap-2 w-full sm:w-auto">
                     <button id="installAppBtn" onclick="installPWA()" class="hidden bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3 py-2 rounded-lg shadow transition flex items-center gap-1.5 text-sm">
                         <i class="fa-solid fa-download"></i> Install App
                     </button>
 
-                    <!-- Desktop Logout Button -->
                     <button onclick="handleLogout()" class="hidden sm:flex bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-2 rounded-lg shadow transition items-center gap-1.5 text-sm">
                         <i class="fa-solid fa-right-from-bracket"></i> Logout
                     </button>
@@ -163,7 +175,6 @@
                 </div>
             </div>
 
-            <!-- Table Section -->
             <div id="tableWrapperBox" class="bg-white rounded-xl shadow-sm border overflow-hidden w-full mx-auto">
                 <div class="overflow-x-auto">
                     <table id="mainTable" class="text-left border-collapse table-fixed text-[9px] text-gray-900 uppercase font-semibold">
@@ -241,6 +252,85 @@
         </div>
     </div>
 
+    <!-- Admin Dashboard Management Modal -->
+    <div id="adminDashboardModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all p-6">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+                <h3 id="adminModalTitle" class="font-bold text-lg text-emerald-800 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line"></i> Manage Accounts
+                </h3>
+                <button onclick="closeAdminDashboardModal()" class="text-gray-500 hover:text-gray-700 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Add/Edit Account Form -->
+            <form onsubmit="saveAccountForm(event)" class="mb-6 space-y-3">
+                <input type="hidden" id="editAccountDocId">
+                <input type="hidden" id="editOldAccountName">
+                <label id="accountFormLabel" class="block text-xs font-bold uppercase text-gray-600">Add New Account</label>
+                <div class="space-y-2">
+                    <input type="text" id="newAccountName" placeholder="Account Name (e.g. Babar)..." required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="newAccountUser" placeholder="Username (ID)..." required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                        <input type="text" id="newAccountPass" placeholder="Password..." required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" id="accountSaveBtn" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white py-2 rounded-lg text-sm font-semibold shadow transition">
+                            Add Account
+                        </button>
+                        <button type="button" id="accountCancelBtn" onclick="resetAccountForm()" class="hidden px-4 bg-gray-400 hover:bg-gray-500 text-white py-2 rounded-lg text-sm font-semibold transition">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Existing Accounts List -->
+            <div>
+                <label class="block text-xs font-bold uppercase text-gray-600 mb-2">Existing Accounts</label>
+                <div id="accountsListContainer" class="max-h-48 overflow-y-auto space-y-2 border border-gray-200 rounded-lg p-2 bg-gray-50">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <div class="mt-6 text-right">
+                <button type="button" onclick="closeAdminDashboardModal()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-semibold transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Beautiful Custom Account Delete Confirmation Modal -->
+    <div id="deleteAccountModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-[60] hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all p-6 text-center border border-red-100">
+            <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+                <i class="fa-solid fa-user-xmark"></i>
+            </div>
+            <h3 class="font-bold text-lg text-gray-900 mb-1">Delete Account?</h3>
+            <p class="text-xs text-gray-500 mb-4">Are you sure you want to delete this account and all its transaction records?</p>
+            
+            <div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-5 text-center">
+                <span class="text-xs text-red-500 uppercase font-bold block mb-0.5">Account Name</span>
+                <div id="deleteAccountTargetName" class="text-base font-extrabold text-red-700 truncate"></div>
+            </div>
+
+            <div class="flex justify-center gap-3">
+                <button type="button" onclick="closeDeleteAccountModal()" class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition">
+                    Cancel
+                </button>
+                <button type="button" id="confirmDeleteAccountBtn" class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold shadow-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-trash-can"></i> Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entry Delete Modal -->
     <div id="deleteModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden transform transition-all p-6 text-center">
             <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
@@ -342,35 +432,150 @@
         const db = firebase.firestore();
 
         let entries = [];
+        let availableAccounts = [
+            { name: 'Mehran', user: 'admin', pass: 'admin123', docId: 'acc_Mehran' },
+            { name: 'Aamir', user: 'user', pass: 'user123', docId: 'acc_Aamir' },
+            { name: 'Expenses', user: '-', pass: '-', docId: 'acc_Expenses' }
+        ];
         let currentFilteredEntries = [];
         let activeSaveHandler = null;
         let deleteTargetId = null;
+        let deleteAccountTarget = { name: null, docId: null };
         let currentUserRole = null;
-        let currentAccount = 'Mehran'; // Admin defaults to Mehran, User defaults to Aamir
+        let currentAccount = 'Mehran';
         let unsubscribeSnapshot = null;
+        let toastTimeout = null;
 
         document.getElementById('entryDate').valueAsDate = new Date();
+
+        /* ================= BEAUTIFUL TOAST FUNCTION ================= */
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('customToast');
+            const box = document.getElementById('toastBox');
+            const icon = document.getElementById('toastIcon');
+            const msg = document.getElementById('toastMessage');
+
+            msg.innerText = message;
+
+            if (type === 'success') {
+                box.className = "flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border border-emerald-400/40 bg-gradient-to-r from-emerald-600 to-green-700 text-white font-semibold text-sm min-w-[280px] max-w-sm justify-between";
+                icon.className = "fa-solid fa-circle-check text-xl text-yellow-300";
+            } else if (type === 'error') {
+                box.className = "flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border border-red-400/40 bg-gradient-to-r from-red-600 to-rose-700 text-white font-semibold text-sm min-w-[280px] max-w-sm justify-between";
+                icon.className = "fa-solid fa-circle-exclamation text-xl text-yellow-200";
+            } else {
+                box.className = "flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border border-blue-400/40 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-semibold text-sm min-w-[280px] max-w-sm justify-between";
+                icon.className = "fa-solid fa-circle-info text-xl text-yellow-300";
+            }
+
+            toast.classList.remove('hidden');
+            toast.classList.remove('toast-animate');
+            void toast.offsetWidth; // trigger reflow
+            toast.classList.add('toast-animate');
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                hideToast();
+            }, 3200);
+        }
+
+        function hideToast() {
+            const toast = document.getElementById('customToast');
+            toast.classList.add('hidden');
+        }
 
         function formatInt(val) {
             return Math.round(parseFloat(val) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
         }
 
-        function handleLogin(e) {
+        async function seedDefaultAccounts() {
+            const defaultList = [
+                { docId: 'acc_Mehran', name: 'Mehran', user: 'admin', pass: 'admin123', isAccountRecord: true, desc: 'New Description' },
+                { docId: 'acc_Aamir', name: 'Aamir', user: 'user', pass: 'user123', isAccountRecord: true, desc: 'New Description' },
+                { docId: 'acc_Expenses', name: 'Expenses', user: '-', pass: '-', isAccountRecord: true, desc: 'New Description' }
+            ];
+
+            for (let acc of defaultList) {
+                try {
+                    const docRef = db.collection("mehran_entries").doc(acc.docId);
+                    const snap = await docRef.get();
+                    if (!snap.exists) {
+                        await docRef.set({
+                            name: acc.name,
+                            user: acc.user,
+                            pass: acc.pass,
+                            isAccountRecord: true,
+                            desc: "New Description"
+                        });
+                    }
+                } catch (e) {
+                    console.log("Seeding note:", e);
+                }
+            }
+        }
+
+        async function handleLogin(e) {
             e.preventDefault();
             const user = document.getElementById('loginUser').value.trim();
             const pass = document.getElementById('loginPass').value.trim();
+            const btn = document.getElementById('loginSubmitBtn');
 
-            if (user === "admin" && pass === "admin123") {
-                currentUserRole = 'admin';
-                currentAccount = 'Mehran';
-                initApp();
-            } else if (user === "user" && pass === "user123") {
-                currentUserRole = 'user';
-                currentAccount = 'Aamir'; // User gets Aamir data only
-                initApp();
-            } else {
-                document.getElementById('loginView').classList.add('hidden');
-                document.getElementById('mapView').classList.remove('hidden');
+            btn.disabled = true;
+            btn.innerText = "Checking...";
+
+            try {
+                const snapshot = await db.collection("mehran_entries").where("isAccountRecord", "==", true).get();
+                let matched = false;
+                let matchedAccountName = '';
+                let matchedRole = 'user';
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.user && data.user !== '-' && data.user === user && data.pass === pass) {
+                        matched = true;
+                        matchedAccountName = data.name;
+                        if (data.name === 'Mehran' || data.user === 'admin') {
+                            matchedRole = 'admin';
+                        }
+                    }
+                });
+
+                if (!matched) {
+                    if (user === "admin" && pass === "admin123") {
+                        matched = true;
+                        matchedRole = 'admin';
+                        matchedAccountName = 'Mehran';
+                    } else if (user === "user" && pass === "user123") {
+                        matched = true;
+                        matchedRole = 'user';
+                        matchedAccountName = 'Aamir';
+                    }
+                }
+
+                if (matched) {
+                    currentUserRole = matchedRole;
+                    currentAccount = matchedAccountName;
+                    initApp();
+                } else {
+                    document.getElementById('loginView').classList.add('hidden');
+                    document.getElementById('mapView').classList.remove('hidden');
+                }
+            } catch (err) {
+                if (user === "admin" && pass === "admin123") {
+                    currentUserRole = 'admin';
+                    currentAccount = 'Mehran';
+                    initApp();
+                } else if (user === "user" && pass === "user123") {
+                    currentUserRole = 'user';
+                    currentAccount = 'Aamir';
+                    initApp();
+                } else {
+                    document.getElementById('loginView').classList.add('hidden');
+                    document.getElementById('mapView').classList.remove('hidden');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> Login`;
             }
         }
 
@@ -430,7 +635,7 @@
             }
         }
 
-        function initApp() {
+        async function initApp() {
             document.getElementById('loginView').classList.add('hidden');
             document.getElementById('mapView').classList.add('hidden');
             
@@ -440,12 +645,12 @@
 
             const addEntryBtnContainer = document.getElementById('addEntryBtnContainer');
             const adminDashContainer = document.getElementById('adminDashboardBtnContainer');
-            const accountSelector = document.getElementById('accountSelector');
 
             if (currentUserRole === 'admin') {
                 addEntryBtnContainer.classList.remove('hidden');
                 adminDashContainer.classList.remove('hidden');
-                accountSelector.value = currentAccount;
+                await seedDefaultAccounts();
+                await loadAccountsList();
             } else {
                 addEntryBtnContainer.classList.add('hidden');
                 adminDashContainer.classList.add('hidden');
@@ -456,6 +661,242 @@
             setupTableHeaders();
             loadEntries();
         }
+
+        // --- Admin Dashboard Modal Functions ---
+        function openAdminDashboardModal() {
+            if (currentUserRole !== 'admin') return;
+            resetAccountForm();
+            loadAccountsList();
+            document.getElementById('adminDashboardModal').classList.remove('hidden');
+        }
+
+        function closeAdminDashboardModal() {
+            document.getElementById('adminDashboardModal').classList.add('hidden');
+        }
+
+        async function loadAccountsList() {
+            try {
+                const snapshot = await db.collection("mehran_entries").where("isAccountRecord", "==", true).get();
+                const loaded = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.name) {
+                        loaded.push({ 
+                            name: data.name, 
+                            user: data.user || '-', 
+                            pass: data.pass || '-', 
+                            docId: doc.id 
+                        });
+                    }
+                });
+
+                if (loaded.length > 0) {
+                    availableAccounts = loaded;
+                }
+            } catch (err) {
+                console.log("Error loading accounts:", err);
+            }
+
+            const defaults = [
+                { name: 'Mehran', user: 'admin', pass: 'admin123', docId: 'acc_Mehran' },
+                { name: 'Aamir', user: 'user', pass: 'user123', docId: 'acc_Aamir' },
+                { name: 'Expenses', user: '-', pass: '-', docId: 'acc_Expenses' }
+            ];
+            defaults.forEach(def => {
+                if (!availableAccounts.some(a => a.name.toLowerCase() === def.name.toLowerCase())) {
+                    availableAccounts.push(def);
+                }
+            });
+
+            // SORT ACCOUNTS: "Mehran" always at the top, all others sorted alphabetically (A to Z)
+            availableAccounts.sort((a, b) => {
+                if (a.name.toLowerCase() === 'mehran') return -1;
+                if (b.name.toLowerCase() === 'mehran') return 1;
+                return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+            });
+
+            const selector = document.getElementById('accountSelector');
+            selector.innerHTML = '';
+            availableAccounts.forEach(acc => {
+                const opt = document.createElement('option');
+                opt.value = acc.name;
+                opt.innerText = acc.name === 'Expenses' ? 'Expenses' : `${acc.name} Account`;
+                if (acc.name === currentAccount) opt.selected = true;
+                selector.appendChild(opt);
+            });
+
+            const container = document.getElementById('accountsListContainer');
+            container.innerHTML = '';
+            
+            availableAccounts.forEach(acc => {
+                if (acc.name.toLowerCase() === 'mehran') return;
+
+                const row = document.createElement('div');
+                row.className = "flex justify-between items-center bg-white p-2.5 rounded-lg border border-gray-200 shadow-xs text-xs font-semibold";
+                
+                row.innerHTML = `
+                    <div>
+                        <div class="font-bold text-emerald-900 text-sm">${escapeHtml(acc.name)}</div>
+                        <div class="text-[10px] text-gray-500">ID: <span class="text-gray-800 font-medium">${escapeHtml(acc.user)}</span> | Pass: <span class="text-gray-800 font-medium">${escapeHtml(acc.pass)}</span></div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="editAccount('${acc.docId}', '${escapeHtml(acc.name).replace(/'/g, "\\'")}', '${escapeHtml(acc.user).replace(/'/g, "\\'")}', '${escapeHtml(acc.pass).replace(/'/g, "\\'")}')" class="text-blue-600 hover:text-blue-800 p-1.5 rounded bg-blue-50 hover:bg-blue-100 transition" title="Edit">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button type="button" onclick="promptDeleteAccount('${escapeHtml(acc.name).replace(/'/g, "\\'")}', '${acc.docId}')" class="text-red-600 hover:text-red-800 p-1.5 rounded bg-red-50 hover:bg-red-100 transition" title="Delete">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function editAccount(docId, name, user, pass) {
+            document.getElementById('editAccountDocId').value = docId || `acc_${name}`;
+            document.getElementById('editOldAccountName').value = name;
+            document.getElementById('newAccountName').value = name;
+            document.getElementById('newAccountUser').value = user === '-' ? '' : user;
+            document.getElementById('newAccountPass').value = pass === '-' ? '' : pass;
+            
+            document.getElementById('accountFormLabel').innerText = `Edit Account (${name})`;
+            document.getElementById('accountSaveBtn').innerText = "Update Account";
+            document.getElementById('accountSaveBtn').className = "flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold shadow transition";
+            document.getElementById('accountCancelBtn').classList.remove('hidden');
+        }
+
+        function resetAccountForm() {
+            document.getElementById('editAccountDocId').value = '';
+            document.getElementById('editOldAccountName').value = '';
+            document.getElementById('newAccountName').value = '';
+            document.getElementById('newAccountUser').value = '';
+            document.getElementById('newAccountPass').value = '';
+
+            document.getElementById('accountFormLabel').innerText = "Add New Account";
+            document.getElementById('accountSaveBtn').innerText = "Add Account";
+            document.getElementById('accountSaveBtn').className = "flex-1 bg-emerald-700 hover:bg-emerald-800 text-white py-2 rounded-lg text-sm font-semibold shadow transition";
+            document.getElementById('accountCancelBtn').classList.add('hidden');
+        }
+
+        async function saveAccountForm(e) {
+            e.preventDefault();
+            const docId = document.getElementById('editAccountDocId').value;
+            const oldName = document.getElementById('editOldAccountName').value;
+            const nameInput = document.getElementById('newAccountName').value.trim();
+            const userInput = document.getElementById('newAccountUser').value.trim();
+            const passInput = document.getElementById('newAccountPass').value.trim();
+            const saveBtn = document.getElementById('accountSaveBtn');
+
+            if (!nameInput || !userInput || !passInput) return;
+
+            saveBtn.disabled = true;
+            saveBtn.innerText = "Saving...";
+
+            try {
+                if (docId) {
+                    await db.collection("mehran_entries").doc(docId).set({
+                        name: nameInput,
+                        user: userInput,
+                        pass: passInput,
+                        isAccountRecord: true,
+                        desc: "New Description"
+                    }, { merge: true });
+
+                    if (oldName && oldName !== nameInput) {
+                        const entriesSnap = await db.collection("mehran_entries").where("account", "==", oldName).get();
+                        const batch = db.batch();
+                        entriesSnap.forEach(doc => {
+                            batch.update(doc.ref, { account: nameInput });
+                        });
+                        await batch.commit();
+                        if (currentAccount === oldName) currentAccount = nameInput;
+                    }
+
+                    showToast(`Account "${nameInput}" updated successfully!`, 'success');
+                } else {
+                    if (availableAccounts.some(a => a.name.toLowerCase() === nameInput.toLowerCase())) {
+                        showToast("Account already exists!", 'error');
+                        saveBtn.disabled = false;
+                        saveBtn.innerText = "Add Account";
+                        return;
+                    }
+                    const newDocId = 'acc_' + Date.now();
+                    await db.collection("mehran_entries").doc(newDocId).set({ 
+                        name: nameInput, 
+                        user: userInput, 
+                        pass: passInput,
+                        isAccountRecord: true,
+                        desc: "New Description"
+                    });
+                    showToast(`Account "${nameInput}" added successfully!`, 'success');
+                }
+                resetAccountForm();
+                await loadAccountsList();
+                updateAccountHeadings();
+            } catch (err) {
+                console.error("Firestore Error:", err);
+                showToast("Error: " + err.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                if (!document.getElementById('editAccountDocId').value) {
+                    saveBtn.innerText = "Add Account";
+                } else {
+                    saveBtn.innerText = "Update Account";
+                }
+            }
+        }
+
+        /* ================= CUSTOM ACCOUNT DELETE MODAL FUNCTIONS ================= */
+        function promptDeleteAccount(accName, docId) {
+            deleteAccountTarget = { name: accName, docId: docId };
+            document.getElementById('deleteAccountTargetName').innerText = accName;
+            document.getElementById('deleteAccountModal').classList.remove('hidden');
+        }
+
+        function closeDeleteAccountModal() {
+            deleteAccountTarget = { name: null, docId: null };
+            document.getElementById('deleteAccountModal').classList.add('hidden');
+        }
+
+        document.getElementById('confirmDeleteAccountBtn').addEventListener('click', async function() {
+            const { name: accName, docId } = deleteAccountTarget;
+            if (!accName) return;
+
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Deleting...`;
+
+            try {
+                if (docId) {
+                    await db.collection("mehran_entries").doc(docId).delete();
+                }
+
+                const entriesSnapshot = await db.collection("mehran_entries").where("account", "==", accName).get();
+                const batch = db.batch();
+                entriesSnapshot.forEach((doc) => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+
+                availableAccounts = availableAccounts.filter(a => a.name !== accName);
+
+                if (currentAccount === accName) {
+                    currentAccount = 'Mehran';
+                }
+
+                closeDeleteAccountModal();
+                resetAccountForm();
+                await loadAccountsList();
+                changeAccount(currentAccount);
+                showToast(`Account "${accName}" deleted successfully!`, 'success');
+            } catch (err) {
+                console.error("Firestore Error:", err);
+                showToast("Failed to delete account!", 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-trash-can"></i> Yes, Delete`;
+            }
+        });
 
         function setupTableHeaders() {
             const thead = document.getElementById('tableHeader');
@@ -568,8 +1009,9 @@
                   entries = [];
                   snapshot.forEach((doc) => {
                       const data = doc.data();
+                      if (data.isAccountRecord) return;
+
                       const itemAccount = data.account || 'Mehran';
-                      
                       if (data.desc !== "New Description" && itemAccount === currentAccount) {
                           entries.push({ id: doc.id, ...data });
                       }
@@ -589,7 +1031,7 @@
               }, (error) => {
                   console.error("Error: ", error);
                   document.getElementById('loadingState').classList.add('hidden');
-                  alert("Failed to load data from Firebase.");
+                  showToast("Failed to load data from Firebase.", 'error');
               });
         }
 
@@ -671,6 +1113,7 @@
                         account: currentAccount,
                         createdAt: Date.now() 
                     });
+                    showToast("Entry added successfully!", "success");
                 } else {
                     await db.collection("mehran_entries").doc(editId).update({ 
                         date, 
@@ -680,11 +1123,12 @@
                         dhrm,
                         account: currentAccount
                     });
+                    showToast("Entry updated successfully!", "success");
                 }
                 closeModal();
             } catch (error) {
                 console.error("Error: ", error);
-                alert("Error saving entry.");
+                showToast("Error saving entry.", "error");
             } finally {
                 saveBtn.disabled = false;
                 saveBtn.innerText = "Save Entry";
@@ -835,7 +1279,6 @@
             }
         }
 
-        /* ================= JPG EXPORT FUNCTIONS ================= */
         function openJpgModal() {
             const totalRows = currentFilteredEntries.length || entries.length || 1;
             document.getElementById('exportFromSr').value = 1;
@@ -849,7 +1292,7 @@
 
         async function exportToJPG(mode) {
             if (currentFilteredEntries.length === 0) {
-                alert("Export karne ke liye koi data mojood nahi hai.");
+                showToast("Export karne ke liye koi data mojood nahi hai.", "error");
                 return;
             }
 
@@ -864,7 +1307,7 @@
                 if (toSr > currentFilteredEntries.length) toSr = currentFilteredEntries.length;
 
                 if (fromSr > toSr) {
-                    alert("From S.No, To S.No se chota ya barabar hona chahiye!");
+                    showToast("From S.No, To S.No se chota ya barabar hona chahiye!", "error");
                     return;
                 }
             }
@@ -1039,9 +1482,10 @@
                 link.download = `${currentAccount}_Account_${mode === 'all' ? 'All_Data' : fromSr + '_to_' + toSr}.jpg`;
                 link.href = canvas.toDataURL('image/jpeg', 0.95);
                 link.click();
+                showToast("JPG downloaded successfully!", "success");
             } catch (err) {
                 console.error("JPG Error:", err);
-                alert("JPG banane mein masla aaya.");
+                showToast("JPG banane mein masla aaya.", "error");
             } finally {
                 document.body.removeChild(tempContainer);
             }
@@ -1067,9 +1511,10 @@
             try {
                 await db.collection("mehran_entries").doc(deleteTargetId).delete();
                 closeDeleteModal();
+                showToast("Entry deleted successfully!", "success");
             } catch (error) {
                 console.error("Error: ", error);
-                alert("Failed to delete entry.");
+                showToast("Failed to delete entry.", "error");
             } finally {
                 btn.disabled = false;
                 btn.innerText = "Delete";
@@ -1104,9 +1549,10 @@
 
                 try {
                     await db.collection("mehran_entries").doc(id).update({ [field]: newValue });
+                    showToast("Updated!", "success");
                 } catch (error) {
                     console.error("Error: ", error);
-                    alert("Failed to update.");
+                    showToast("Failed to update.", "error");
                     cell.innerHTML = originalContent;
                 }
             };
