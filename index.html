@@ -110,25 +110,27 @@
             <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
                 
                 <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full sm:w-auto">
-                    <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
-                        <div id="adminDashboardBtnContainer" class="hidden flex flex-wrap items-center gap-2">
+                    <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                        <!-- Admin Dashboard Container With Accounts Dropdown & Logout side by side -->
+                        <div id="adminDashboardBtnContainer" class="hidden flex flex-wrap items-center gap-2 w-full sm:w-auto">
                             <button onclick="openAdminDashboardModal()" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl shadow transition text-sm flex items-center gap-2 border border-emerald-600/50 whitespace-nowrap cursor-pointer">
                                 <i class="fa-solid fa-chart-line text-yellow-300"></i> Admin Dashboard
                             </button>
                             
-                            <div class="relative">
+                            <!-- Logout Button right next to Admin Dashboard[span_1](start_span)[span_1](end_span) -->
+                            <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-2 rounded-xl shadow transition flex items-center gap-1.5 text-sm border border-red-400/30">
+                                <i class="fa-solid fa-right-from-bracket"></i> Logout
+                            </button>
+
+                            <div class="relative w-full sm:w-auto mt-1 sm:mt-0">
                                 <select id="accountSelector" onchange="changeAccount(this.value)" 
-                                    class="bg-emerald-950 text-yellow-300 font-bold px-3 py-2 rounded-xl shadow border border-emerald-500/50 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer">
+                                    class="bg-emerald-950 text-yellow-300 font-bold px-3 py-2 rounded-xl shadow border border-emerald-500/50 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer w-full sm:w-auto">
                                     <option value="Mehran">Mehran Account</option>
                                     <option value="Aamir">Aamir Account</option>
                                     <option value="Expenses">Expenses</option>
                                 </select>
                             </div>
                         </div>
-
-                        <button onclick="handleLogout()" class="sm:hidden bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-2 rounded-lg shadow transition flex items-center gap-1.5 text-sm ml-auto">
-                            <i class="fa-solid fa-right-from-bracket"></i> Logout
-                        </button>
                     </div>
 
                     <div class="flex items-start space-x-3 w-full justify-between sm:justify-start">
@@ -156,7 +158,8 @@
                         <i class="fa-solid fa-download"></i> Install App
                     </button>
 
-                    <button onclick="handleLogout()" class="hidden sm:flex bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-2 rounded-lg shadow transition items-center gap-1.5 text-sm">
+                    <!-- View-only user logout button -->
+                    <button id="userLogoutBtn" onclick="handleLogout()" class="hidden bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-2 rounded-lg shadow transition items-center gap-1.5 text-sm">
                         <i class="fa-solid fa-right-from-bracket"></i> Logout
                     </button>
                 </div>
@@ -165,7 +168,21 @@
         </header>
 
         <main class="max-w-7xl mx-auto px-2 sm:px-6 py-6 w-full flex-grow">
+            <!-- Controls Bar: Month Selector & Search Box -->
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                
+                <!-- Month Filter Dropdown -->
+                <div class="relative w-full md:w-72">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-emerald-700">
+                        <i class="fa-solid fa-calendar-days"></i>
+                    </span>
+                    <select id="monthFilterSelect" onchange="renderTable()" 
+                        class="w-full pl-10 pr-4 py-2 bg-emerald-50 border border-emerald-300 rounded-lg text-sm font-semibold text-emerald-900 focus:outline-none focus:ring-2 focus:ring-green-600 cursor-pointer transition">
+                        <option value="all">All Months (تمام مہینے)</option>
+                    </select>
+                </div>
+
+                <!-- Search Input -->
                 <div class="relative w-full md:w-96">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                         <i class="fa-solid fa-search"></i>
@@ -448,7 +465,6 @@
 
         document.getElementById('entryDate').valueAsDate = new Date();
 
-        /* ================= BEAUTIFUL TOAST FUNCTION ================= */
         function showToast(message, type = 'success') {
             const toast = document.getElementById('customToast');
             const box = document.getElementById('toastBox');
@@ -470,7 +486,7 @@
 
             toast.classList.remove('hidden');
             toast.classList.remove('toast-animate');
-            void toast.offsetWidth; // trigger reflow
+            void toast.offsetWidth;
             toast.classList.add('toast-animate');
 
             if (toastTimeout) clearTimeout(toastTimeout);
@@ -645,15 +661,22 @@
 
             const addEntryBtnContainer = document.getElementById('addEntryBtnContainer');
             const adminDashContainer = document.getElementById('adminDashboardBtnContainer');
+            const userLogoutBtn = document.getElementById('userLogoutBtn');
 
             if (currentUserRole === 'admin') {
                 addEntryBtnContainer.classList.remove('hidden');
                 adminDashContainer.classList.remove('hidden');
+                if (userLogoutBtn) userLogoutBtn.classList.add('hidden');
                 await seedDefaultAccounts();
                 await loadAccountsList();
             } else {
                 addEntryBtnContainer.classList.add('hidden');
                 adminDashContainer.classList.add('hidden');
+                if (userLogoutBtn) {
+                    userLogoutBtn.classList.remove('hidden');
+                    userLogoutBtn.classList.add('flex');
+                }
+                await loadAccountsList();
             }
 
             updateAccountHeadings();
@@ -708,7 +731,6 @@
                 }
             });
 
-            // SORT ACCOUNTS: "Mehran" always at the top, all others sorted alphabetically (A to Z)
             availableAccounts.sort((a, b) => {
                 if (a.name.toLowerCase() === 'mehran') return -1;
                 if (b.name.toLowerCase() === 'mehran') return 1;
@@ -716,40 +738,43 @@
             });
 
             const selector = document.getElementById('accountSelector');
-            selector.innerHTML = '';
-            availableAccounts.forEach(acc => {
-                const opt = document.createElement('option');
-                opt.value = acc.name;
-                opt.innerText = acc.name === 'Expenses' ? 'Expenses' : `${acc.name} Account`;
-                if (acc.name === currentAccount) opt.selected = true;
-                selector.appendChild(opt);
-            });
+            if (selector) {
+                selector.innerHTML = '';
+                availableAccounts.forEach(acc => {
+                    const opt = document.createElement('option');
+                    opt.value = acc.name;
+                    opt.innerText = acc.name === 'Expenses' ? 'Expenses' : `${acc.name} Account`;
+                    if (acc.name === currentAccount) opt.selected = true;
+                    selector.appendChild(opt);
+                });
+            }
 
             const container = document.getElementById('accountsListContainer');
-            container.innerHTML = '';
-            
-            availableAccounts.forEach(acc => {
-                if (acc.name.toLowerCase() === 'mehran') return;
+            if (container) {
+                container.innerHTML = '';
+                availableAccounts.forEach(acc => {
+                    if (acc.name.toLowerCase() === 'mehran') return;
 
-                const row = document.createElement('div');
-                row.className = "flex justify-between items-center bg-white p-2.5 rounded-lg border border-gray-200 shadow-xs text-xs font-semibold";
-                
-                row.innerHTML = `
-                    <div>
-                        <div class="font-bold text-emerald-900 text-sm">${escapeHtml(acc.name)}</div>
-                        <div class="text-[10px] text-gray-500">ID: <span class="text-gray-800 font-medium">${escapeHtml(acc.user)}</span> | Pass: <span class="text-gray-800 font-medium">${escapeHtml(acc.pass)}</span></div>
-                    </div>
-                    <div class="flex items-center gap-1.5">
-                        <button type="button" onclick="editAccount('${acc.docId}', '${escapeHtml(acc.name).replace(/'/g, "\\'")}', '${escapeHtml(acc.user).replace(/'/g, "\\'")}', '${escapeHtml(acc.pass).replace(/'/g, "\\'")}')" class="text-blue-600 hover:text-blue-800 p-1.5 rounded bg-blue-50 hover:bg-blue-100 transition" title="Edit">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button type="button" onclick="promptDeleteAccount('${escapeHtml(acc.name).replace(/'/g, "\\'")}', '${acc.docId}')" class="text-red-600 hover:text-red-800 p-1.5 rounded bg-red-50 hover:bg-red-100 transition" title="Delete">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                `;
-                container.appendChild(row);
-            });
+                    const row = document.createElement('div');
+                    row.className = "flex justify-between items-center bg-white p-2.5 rounded-lg border border-gray-200 shadow-xs text-xs font-semibold";
+                    
+                    row.innerHTML = `
+                        <div>
+                            <div class="font-bold text-emerald-900 text-sm">${escapeHtml(acc.name)}</div>
+                            <div class="text-[10px] text-gray-500">ID: <span class="text-gray-800 font-medium">${escapeHtml(acc.user)}</span> | Pass: <span class="text-gray-800 font-medium">${escapeHtml(acc.pass)}</span></div>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" onclick="editAccount('${acc.docId}', '${escapeHtml(acc.name).replace(/'/g, "\\'")}', '${escapeHtml(acc.user).replace(/'/g, "\\'")}', '${escapeHtml(acc.pass).replace(/'/g, "\\'")}')" class="text-blue-600 hover:text-blue-800 p-1.5 rounded bg-blue-50 hover:bg-blue-100 transition" title="Edit">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button type="button" onclick="promptDeleteAccount('${escapeHtml(acc.name).replace(/'/g, "\\'")}', '${acc.docId}')" class="text-red-600 hover:text-red-800 p-1.5 rounded bg-red-50 hover:bg-red-100 transition" title="Delete">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            }
         }
 
         function editAccount(docId, name, user, pass) {
@@ -846,7 +871,6 @@
             }
         }
 
-        /* ================= CUSTOM ACCOUNT DELETE MODAL FUNCTIONS ================= */
         function promptDeleteAccount(accName, docId) {
             deleteAccountTarget = { name: accName, docId: docId };
             document.getElementById('deleteAccountTargetName').innerText = accName;
@@ -997,6 +1021,85 @@
             return 0;
         }
 
+        const monthNamesEn = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        function getMonthKey(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                let year, month;
+                if (parts[0].length === 4) {
+                    year = parts[0];
+                    month = parts[1];
+                } else {
+                    year = parts[2];
+                    month = parts[1];
+                }
+                return `${year}-${month}`;
+            }
+            return '';
+        }
+
+        function formatMonthLabel(monthKey) {
+            if (!monthKey || !monthKey.includes('-')) return monthKey;
+            const [year, month] = monthKey.split('-');
+            const mIndex = parseInt(month, 10) - 1;
+            const mName = monthNamesEn[mIndex] || month;
+            return `${mName} ${year}`;
+        }
+
+        function getPreviousMonthKey(monthKey) {
+            if (!monthKey || !monthKey.includes('-')) return null;
+            let [year, month] = monthKey.split('-').map(Number);
+            month -= 1;
+            if (month < 1) {
+                month = 12;
+                year -= 1;
+            }
+            return `${year}-${String(month).padStart(2, '0')}`;
+        }
+
+        function getCurrentMonthKey() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            return `${year}-${month}`;
+        }
+
+        function updateMonthDropdown(allEntries) {
+            const select = document.getElementById('monthFilterSelect');
+            if (!select) return;
+            
+            const currentSelected = select.value;
+            const currentMonthDefault = getCurrentMonthKey();
+            
+            const monthSet = new Set();
+            allEntries.forEach(item => {
+                const mk = getMonthKey(item.date);
+                if (mk) monthSet.add(mk);
+            });
+
+            monthSet.add(currentMonthDefault);
+
+            const sortedMonths = Array.from(monthSet).sort();
+
+            select.innerHTML = '<option value="all">All Months (تمام مہینے)</option>';
+            sortedMonths.forEach(mk => {
+                const opt = document.createElement('option');
+                opt.value = mk;
+                opt.innerText = formatMonthLabel(mk);
+                select.appendChild(opt);
+            });
+
+            if (currentSelected && currentSelected !== 'all') {
+                select.value = currentSelected;
+            } else if (sortedMonths.includes(currentMonthDefault)) {
+                select.value = currentMonthDefault;
+            } else {
+                select.value = 'all';
+            }
+        }
+
         function loadEntries() {
             if (unsubscribeSnapshot) {
                 unsubscribeSnapshot();
@@ -1026,6 +1129,7 @@
                       return (timeA === 0 ? Number.MAX_SAFE_INTEGER : timeA) - (timeB === 0 ? Number.MAX_SAFE_INTEGER : timeB);
                   });
 
+                  updateMonthDropdown(entries);
                   document.getElementById('loadingState').classList.add('hidden');
                   renderTable();
               }, (error) => {
@@ -1139,7 +1243,11 @@
             const tableBody = document.getElementById('tableBody');
             const tableFooter = document.getElementById('tableFooter');
             const emptyState = document.getElementById('emptyState');
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const searchInputElem = document.getElementById('searchInput');
+            const monthSelectElem = document.getElementById('monthFilterSelect');
+
+            const searchTerm = searchInputElem ? searchInputElem.value.toLowerCase() : '';
+            const selectedMonthFilter = monthSelectElem ? monthSelectElem.value : 'all';
 
             if (activeSaveHandler) activeSaveHandler();
             tableBody.innerHTML = "";
@@ -1147,7 +1255,7 @@
             let runningTotal = 0;
             const isExpensesAccount = (currentAccount === 'Expenses');
 
-            const entriesWithRunningTotal = entries.map(item => {
+            const allEntriesWithTotal = entries.map(item => {
                 const pkrVal = Math.round(parseFloat(item.pkr) || 0);
                 const dhrmVal = Math.round(parseFloat(item.dhrm) || 0);
                 const isPending = (item.status || "").trim().toLowerCase() === "pending";
@@ -1157,18 +1265,60 @@
                 } else {
                     if (!isPending) runningTotal += dhrmVal;
                 }
-                return { ...item, calculatedTotal: runningTotal };
+                return { ...item, calculatedTotal: runningTotal, pkrVal, dhrmVal, isPending };
             });
 
-            const filteredEntries = entriesWithRunningTotal.filter(item => {
+            const searchedEntries = allEntriesWithTotal.filter(item => {
                 return (item.desc && item.desc.toLowerCase().includes(searchTerm)) || 
                        (item.status && item.status.toLowerCase().includes(searchTerm)) || 
                        (item.date && item.date.includes(searchTerm));
             });
 
-            currentFilteredEntries = filteredEntries;
+            let displayedEntries = searchedEntries;
+            let openingBalance = 0;
+            let previousMonthLabel = '';
 
-            if (filteredEntries.length === 0) {
+            if (selectedMonthFilter !== 'all') {
+                const prevMonthKey = getPreviousMonthKey(selectedMonthFilter);
+                
+                if (prevMonthKey) {
+                    const priorItems = allEntriesWithTotal.filter(item => {
+                        const mk = getMonthKey(item.date);
+                        return mk && mk <= prevMonthKey;
+                    });
+                    if (priorItems.length > 0) {
+                        openingBalance = priorItems[priorItems.length - 1].calculatedTotal;
+                    }
+                } else {
+                    const priorItems = allEntriesWithTotal.filter(item => {
+                        const mk = getMonthKey(item.date);
+                        return mk && mk < selectedMonthFilter;
+                    });
+                    if (priorItems.length > 0) {
+                        openingBalance = priorItems[priorItems.length - 1].calculatedTotal;
+                    }
+                }
+
+                previousMonthLabel = prevMonthKey ? formatMonthLabel(prevMonthKey) : 'Previous Balance';
+
+                displayedEntries = searchedEntries.filter(item => {
+                    return getMonthKey(item.date) === selectedMonthFilter;
+                });
+
+                let currentMonthRunning = openingBalance;
+                displayedEntries = displayedEntries.map(item => {
+                    if (isExpensesAccount) {
+                        currentMonthRunning += (item.dhrmVal - item.pkrVal);
+                    } else {
+                        if (!item.isPending) currentMonthRunning += item.dhrmVal;
+                    }
+                    return { ...item, calculatedTotal: currentMonthRunning };
+                });
+            }
+
+            currentFilteredEntries = displayedEntries;
+
+            if (displayedEntries.length === 0 && selectedMonthFilter === 'all' && entries.length === 0) {
                 emptyState.classList.remove('hidden');
                 tableFooter.classList.add('hidden');
                 return;
@@ -1177,12 +1327,52 @@
                 tableFooter.classList.remove('hidden');
             }
 
+            if (selectedMonthFilter !== 'all') {
+                const balRow = document.createElement('tr');
+                balRow.className = "bg-emerald-50 font-bold text-emerald-900 border-b";
+                
+                if (currentUserRole === 'admin') {
+                    if (isExpensesAccount) {
+                        balRow.innerHTML = `
+                            <td class="py-2.5 px-1 border text-center">-</td>
+                            <td class="py-2.5 px-1 border text-center">-</td>
+                            <td class="py-2.5 px-1 border text-emerald-900 uppercase font-extrabold">Balance of ${previousMonthLabel}</td>
+                            <td class="py-2.5 px-1 border text-right">-</td>
+                            <td class="py-2.5 px-1 border text-right">-</td>
+                            <td class="py-2.5 px-1 border text-right font-extrabold">${formatInt(openingBalance)}</td>
+                            <td class="py-2.5 px-1 border text-center">-</td>
+                        `;
+                    } else {
+                        balRow.innerHTML = `
+                            <td class="py-2.5 px-1 border text-center">-</td>
+                            <td class="py-2.5 px-1 border text-center">-</td>
+                            <td class="py-2.5 px-1 border text-emerald-900 uppercase font-extrabold">Balance of ${previousMonthLabel}</td>
+                            <td class="py-2.5 px-1 border">-</td>
+                            <td class="py-2.5 px-1 border text-right">-</td>
+                            <td class="py-2.5 px-1 border text-right">-</td>
+                            <td class="py-2.5 px-1 border text-right font-extrabold">${formatInt(openingBalance)}</td>
+                            <td class="py-2.5 px-1 border text-center">-</td>
+                        `;
+                    }
+                } else {
+                    balRow.innerHTML = `
+                        <td class="py-2.5 px-[1px] border text-center">-</td>
+                        <td class="py-2.5 px-[1px] border text-center">-</td>
+                        <td class="py-2.5 px-[1px] border text-emerald-900 uppercase font-extrabold">Balance of ${previousMonthLabel}</td>
+                        <td class="py-2.5 px-[1px] border">-</td>
+                        <td class="py-2.5 px-[1px] border text-right">-</td>
+                        <td class="py-2.5 px-[1px] border text-right font-extrabold">${formatInt(openingBalance)}</td>
+                    `;
+                }
+                tableBody.appendChild(balRow);
+            }
+
             let sumPkr = 0, sumDhrm = 0;
 
-            filteredEntries.forEach((item, index) => {
-                const pkrVal = Math.round(parseFloat(item.pkr) || 0);
-                const dhrmVal = Math.round(parseFloat(item.dhrm) || 0);
-                const isPending = (item.status || "").trim().toLowerCase() === "pending";
+            displayedEntries.forEach((item, index) => {
+                const pkrVal = item.pkrVal;
+                const dhrmVal = item.dhrmVal;
+                const isPending = item.isPending;
 
                 if (isExpensesAccount) {
                     sumPkr += pkrVal;
@@ -1263,7 +1453,7 @@
                             <td colspan="4" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">Grand Total</td>
                             <td id="grandTotalPkr" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumPkr)}</td>
                             <td id="grandTotalDhrm" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
-                            <td id="grandTotalFinal" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
+                            <td id="grandTotalFinal" class="py-2.5 px-1 border text-right text-gray-900 uppercase font-bold">${formatInt(displayedEntries.length > 0 ? displayedEntries[displayedEntries.length - 1].calculatedTotal : openingBalance)}</td>
                             <td class="py-2.5 px-1 border"></td>
                         </tr>
                     `;
@@ -1273,7 +1463,7 @@
                     <tr>
                         <td colspan="4" class="py-2.5 px-[1px] border text-right text-gray-900 uppercase font-bold">Grand Total</td>
                         <td id="grandTotalDhrm" class="py-2.5 px-[1px] border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
-                        <td id="grandTotalFinal" class="py-2.5 px-[1px] border text-right text-gray-900 uppercase font-bold">${formatInt(sumDhrm)}</td>
+                        <td id="grandTotalFinal" class="py-2.5 px-[1px] border text-right text-gray-900 uppercase font-bold">${formatInt(displayedEntries.length > 0 ? displayedEntries[displayedEntries.length - 1].calculatedTotal : openingBalance)}</td>
                     </tr>
                 `;
             }
@@ -1371,9 +1561,9 @@
             let rowsHtml = '';
             selectedItems.forEach((item, idx) => {
                 const srNo = (fromSr - 1) + idx + 1;
-                const pkrVal = Math.round(parseFloat(item.pkr) || 0);
-                const dhrmVal = Math.round(parseFloat(item.dhrm) || 0);
-                const isPending = (item.status || "").trim().toLowerCase() === "pending";
+                const pkrVal = item.pkrVal;
+                const dhrmVal = item.dhrmVal;
+                const isPending = item.isPending;
 
                 if (isExpensesAccount) {
                     sumPkr += pkrVal;
@@ -1426,7 +1616,7 @@
                 }
             });
 
-            const lastTotalVal = selectedItems.length > 0 ? selectedItems[selectedItems.length - 1].calculatedTotal : (isExpensesAccount ? (sumDhrm - sumPkr) : sumDhrm);
+            const lastTotalVal = selectedItems.length > 0 ? selectedItems[selectedItems.length - 1].calculatedTotal : 0;
 
             let footerHtml = '';
             if (isAdmin) {
